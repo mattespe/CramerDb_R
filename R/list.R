@@ -52,32 +52,27 @@ endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/", heade
       endpoint_names <- names(endpoints)
       endpoint_names <- endpoint_names[order(endpoint_names)]
 
-      # Display header with gum styling
-      .gum_header(sprintf("Available endpoints at %s", url))
+      # Display header
+      cat(sprintf("Available endpoints at %s", url))
 
       # Display each endpoint with styling
       for (name in endpoint_names) {
         endpoint_url <- endpoints[[name]]
 
         # Style the endpoint name
-        styled_name <- .gum_style(sprintf("  %-20s", name),
-                                   color = .gum_colors$primary,
-                                   bold = TRUE)
+        styled_name <- sprintf("  %-20s", name)
 
-        # Display with muted URL
-        styled_url <- .gum_style(endpoint_url, color = .gum_colors$muted)
-
-        cat(styled_name, styled_url, "\n", sep = "")
+        cat(styled_name, endpoint_url, "\n", sep = "")
       }
     } else {
-      .gum_warning(sprintf("No endpoints available at %s", url))
+      warning(sprintf("No endpoints available at %s", url))
     }
 
     cat("\n")
     invisible(body)
 
   }, error = function(e) {
-    .gum_error(sprintf("Error fetching %s", url))
+    cat(sprintf("Error fetching %s", url))
     cat("  ", conditionMessage(e), "\n", sep = "")
     invisible(NULL)
   })
@@ -116,34 +111,32 @@ whoami <- function(base_url = "https://cramerdb.com/api/", headers = list(), sta
     body <- httr2::resp_body_json(res, simplifyVector = FALSE)
 
     # Show auth status with gum styling
-    .gum_header("CramerDB Authentication Status")
+    cat("CramerDB Authentication Status")
 
     if (!is.null(body[["authenticated"]])) {
       is_authed <- isTRUE(body[["authenticated"]])
 
       # Display authentication status
       if (is_authed) {
-        .gum_kv("Authenticated", .gum_style("YES", color = .gum_colors$success, bold = TRUE))
+        cat("Authenticated : YES")
 
         if (!is.null(body[["user"]])) {
-          .gum_kv("User", .gum_style(body[["user"]], color = .gum_colors$primary))
+          cat("User : ", body[["user"]])
         }
       } else {
-        .gum_kv("Authenticated", .gum_style("NO", color = .gum_colors$error, bold = TRUE))
-
-        cat("\n")
-        .gum_warning("Not authenticated")
-        cat("  To authenticate, use: ", .gum_style("set_token('your_token_here')", color = .gum_colors$primary), "\n", sep = "")
+        cat("Authenticated : NO\n")
+        warning("Not authenticated\n",
+                "  To authenticate, use: set_token('your_token_here')")
       }
     } else {
-      .gum_error("Unable to determine authentication status")
+      stop("Unable to determine authentication status")
     }
 
     cat("\n")
     invisible(body)
 
   }, error = function(e) {
-    .gum_error("Error checking authentication")
+    cat("Error checking authentication")
     cat("  ", conditionMessage(e), "\n", sep = "")
     invisible(NULL)
   })
@@ -209,14 +202,13 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
     }
 
     if (!is.null(field_info) && length(field_info) > 0) {
-      .gum_header(sprintf("Fields at %s", url))
+      cat(sprintf("Fields at %s", url))
       for (nm in names(field_info)) {
         fi       <- field_info[[nm]]
         type     <- fi[["type"]] %||% "unknown"
         req_fld  <- if (isTRUE(fi[["required"]])) " (required)" else ""
-        styled_nm   <- .gum_style(sprintf("  %-25s", nm),
-                                   color = .gum_colors$primary, bold = TRUE)
-        styled_type <- .gum_style(paste0(type, req_fld), color = .gum_colors$muted)
+        styled_nm   <- sprintf("  %-25s", nm)
+        styled_type <- paste0(type, req_fld)
         cat(styled_nm, styled_type, "\n", sep = "")
       }
       cat("\n")
@@ -234,20 +226,20 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
     results <- body2[["results"]]
     if (!is.null(results) && length(results) > 0) {
       nms <- names(results[[1]])
-      .gum_header(sprintf("Fields at %s", url))
+      cat(sprintf("Fields at %s", url))
       for (nm in nms) {
-        cat(.gum_style(sprintf("  %s", nm), color = .gum_colors$primary), "\n", sep = "")
+        cat(sprintf("  %s", nm), "\n", sep = "")
       }
       cat("\n")
       return(nms)
     }
 
-    .gum_warning(sprintf("No fields found at %s", url))
+    warning(sprintf("No fields found at %s", url))
     invisible(NULL)
 
   }, error = function(e) {
-    .gum_error(sprintf("Error fetching fields from %s", url))
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message(sprintf("Error fetching fields from %s", url))
+    message("  ", conditionMessage(e), "\n", sep = "")
     invisible(NULL)
   })
 

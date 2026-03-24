@@ -4,22 +4,11 @@
   # Show package info
   packageStartupMessage("cramerdb: R interface for the CramerDB API")
 
-  # Check for gum and show helpful message
-  if (!.has_gum()) {
-    packageStartupMessage(
-      "\nTip: Install 'gum' for beautiful styled output:\n",
-      "  install_gum()\n",
-      "\nGum adds colors, progress bars, and styled tables!"
-    )
-  } else {
-    packageStartupMessage("\nBeautiful output enabled via gum CLI")
-  }
-
   .check_for_updates()
 }
 
 .check_for_updates <- function() {
-  tryCatch({
+  try({
     current <- utils::packageVersion("cramerdb")
     req <- httr2::request(
       "https://raw.githubusercontent.com/ConnerSwineford/CramerDB_R/main/cramerdb/DESCRIPTION"
@@ -42,5 +31,5 @@
         }
       }
     }
-  }, error = function(e) invisible(NULL))
+  })
 }

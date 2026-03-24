@@ -14,7 +14,7 @@
 #' }
 test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
   base_url <- .resolve_base_url(base_url, staging)
-  .gum_header("Testing CramerDB Connection")
+  message("Testing CramerDB Connection")
 
   # Check internet connectivity first
   tryCatch({
@@ -22,17 +22,17 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
     req <- httr2::req_timeout(req, 5)  # 5 second timeout
     req <- httr2::req_headers(req, Accept = "application/json")
 
-    cat(.gum_style("  Checking network connectivity...", color = .gum_colors$muted), "\r")
+    cat("  Checking network connectivity...", "\r")
     flush.console()
 
     res <- httr2::req_perform(req)
 
-    cat(.gum_style("  Checking network connectivity... ", color = .gum_colors$muted))
-    .gum_success("OK")
+    cat("  Checking network connectivity... ")
+    message("OK")
 
   }, error = function(e) {
-    .gum_error("Cannot reach API server")
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message("Cannot reach API server")
+    message("  ", conditionMessage(e), "\n", sep = "")
     return(invisible(FALSE))
   })
 
@@ -40,12 +40,11 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
   token <- get_token(error_if_missing = FALSE)
 
   if (is.null(token)) {
-    .gum_warning("No API token configured")
-    cat("  Run: set_token('your_token_here')\n")
+    warning("No API token configured\n  Run: set_token('your_token_here')\n")
     return(invisible(FALSE))
   }
 
-  cat(.gum_style("  Verifying authentication...", color = .gum_colors$muted), "\r")
+  message("  Verifying authentication...", "\r")
   flush.console()
 
   tryCatch({
@@ -56,24 +55,22 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
     res <- httr2::req_perform(req)
     body <- httr2::resp_body_json(res, simplifyVector = FALSE)
 
-    cat(.gum_style("  Verifying authentication...     ", color = .gum_colors$muted))
+    message("  Verifying authentication...     ")
 
     if (isTRUE(body[["authenticated"]])) {
-      .gum_success("Authenticated")
+      message("Authenticated")
       if (!is.null(body[["user"]])) {
-        cat("  User: ", .gum_style(body[["user"]], color = .gum_colors$primary), "\n", sep = "")
+        message("  User: ", body[["user"]])
       }
       cat("\n")
-      .gum_success("Connection test passed!")
+      message("Connection test passed!")
       return(invisible(TRUE))
     } else {
-      .gum_error("Authentication failed")
-      cat("  Token may be invalid or expired\n")
-      return(invisible(FALSE))
+      stop("Authentication failed\n  Token may be invalid or expired\n")
     }
 
   }, error = function(e) {
-    .gum_error("Authentication check failed")
+    message("Authentication check failed")
     cat("  ", conditionMessage(e), "\n", sep = "")
     return(invisible(FALSE))
   })
@@ -98,13 +95,6 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
 #' }
 browse_endpoints <- function(base_url = "https://cramerdb.com/api/", path = NULL, staging = FALSE) {
   base_url <- .resolve_base_url(base_url, staging)
-  if (!.has_gum()) {
-    message("Interactive browsing requires gum CLI")
-    message("Install with: install_gum()")
-    message("\nShowing all endpoints:")
-    endpoints(path = path, base_url = base_url)
-    return(invisible(NULL))
-  }
 
   headers <- .auth_headers(list())
   url <- .build_endpoint_url(base_url, path)
@@ -135,7 +125,7 @@ browse_endpoints <- function(base_url = "https://cramerdb.com/api/", path = NULL
     ep_names <- ep_names[order(ep_names)]
 
     # Use gum filter for selection
-    cat(.gum_style("Browse endpoints at:", color = .gum_colors$primary), " ", url, "\n\n", sep = "")
+    message("Browse endpoints at: ", url, "\n\n")
 
     selected <- .gum_filter(ep_names, prompt = "Search endpoints:")
 
@@ -146,15 +136,14 @@ browse_endpoints <- function(base_url = "https://cramerdb.com/api/", path = NULL
 
     selected_url <- ep_list[[selected]]
 
-    cat("\n")
-    .gum_success(paste("Selected:", selected))
-    cat("  URL: ", .gum_style(selected_url, color = .gum_colors$muted), "\n", sep = "")
+    message("Selected:", selected)
+    message("  URL: ", selected_url)
 
     return(invisible(selected_url))
 
   }, error = function(e) {
-    .gum_error(sprintf("Error browsing %s", url))
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message(sprintf("Error browsing %s", url))
+    message("  ", conditionMessage(e), "\n", sep = "")
     return(invisible(NULL))
   })
 }

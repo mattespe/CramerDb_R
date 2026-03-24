@@ -31,7 +31,7 @@ create <- function(url, data, headers = list(), id_col = "id",
 
   # Show progress if multiple rows
   if (total_rows > 1 && .is_verbose()) {
-    cat(.gum_style("Creating records:", color = .gum_colors$primary),
+    cat("Creating records:",
         sprintf(" %d rows\n", total_rows))
   }
 
@@ -41,13 +41,13 @@ create <- function(url, data, headers = list(), id_col = "id",
       .post_one(url, rows[[i]], headers, style)
       current <<- current + 1
       if (total_rows > 1 && .is_verbose()) {
-        .gum_progress(current, total_rows, "Creating")
+        message("Creating " round( current / total_rows))
       }
     })
   })
 
   if (total_rows > 1 && .is_verbose()) {
-    .gum_success(sprintf("Created %d records successfully", total_rows))
+    message(sprintf("Created %d records successfully", total_rows))
   }
 
   invisible(TRUE)
@@ -84,7 +84,7 @@ update <- function(url, data, headers = list(), id_col = "id",
   # Dry run mode
   if (dry_run) {
     if (valid_rows < total_rows) {
-      .gum_warning(sprintf("update(): %d rows with missing '%s' will be skipped",
+      warning(sprintf("update(): %d rows with missing '%s' will be skipped",
                            total_rows - valid_rows, id_col))
     }
     .show_dry_run("UPDATE", url, rows, valid_rows)
@@ -92,13 +92,13 @@ update <- function(url, data, headers = list(), id_col = "id",
   }
 
   if (valid_rows < total_rows && .is_verbose()) {
-    .gum_warning(sprintf("update(): %d rows with missing '%s' will be skipped",
+    warning(sprintf("update(): %d rows with missing '%s' will be skipped",
                          total_rows - valid_rows, id_col))
   }
 
   # Show progress if multiple rows
   if (total_rows > 1 && .is_verbose()) {
-    cat(.gum_style("Updating records:", color = .gum_colors$primary),
+    cat("Updating records:" ,
         sprintf(" %d rows\n", total_rows))
   }
 
@@ -111,13 +111,13 @@ update <- function(url, data, headers = list(), id_col = "id",
       }
       current <<- current + 1
       if (total_rows > 1 && .is_verbose()) {
-        .gum_progress(current, total_rows, "Updating")
+        message("Updating ", round(current / total_rows))
       }
     })
   })
 
   if (total_rows > 1 && .is_verbose()) {
-    .gum_success(sprintf("Updated %d records successfully", valid_rows))
+    message(sprintf("Updated %d records successfully", valid_rows))
   }
 
   invisible(TRUE)
@@ -153,7 +153,7 @@ upsert <- function(url, data, headers = list(), id_col = "id",
 
   # Show progress if multiple rows
   if (total_rows > 1 && .is_verbose()) {
-    cat(.gum_style("Upserting records:", color = .gum_colors$primary),
+    message("Upserting records:",
         sprintf(" %d rows\n", total_rows))
   }
 
@@ -180,13 +180,13 @@ upsert <- function(url, data, headers = list(), id_col = "id",
       }
       current <<- current + 1
       if (total_rows > 1 && .is_verbose()) {
-        .gum_progress(current, total_rows, "Upserting")
+        message("Upserting", round(current / total_rows))
       }
     })
   })
 
   if (total_rows > 1 && .is_verbose()) {
-    .gum_success(sprintf("Upserted %d records (created: %d, updated: %d)",
+    message(sprintf("Upserted %d records (created: %d, updated: %d)",
                          total_rows, created, updated))
   }
 
@@ -367,33 +367,31 @@ upsert <- function(url, data, headers = list(), id_col = "id",
 
 # Show dry-run preview
 .show_dry_run <- function(operation, url, rows, total_rows) {
-  .gum_header(sprintf("DRY RUN: %s Preview", operation))
+  message(sprintf("DRY RUN: %s Preview", operation))
 
-  cat(.gum_style("Operation:", color = .gum_colors$primary, bold = TRUE), " ", operation, "\n", sep = "")
-  cat(.gum_style("Endpoint:", color = .gum_colors$primary, bold = TRUE), "  ", url, "\n", sep = "")
-  cat(.gum_style("Records:", color = .gum_colors$primary, bold = TRUE), "   ", total_rows, "\n\n", sep = "")
+  message("Operation: ", operation)
+  message("Endpoint: ", url)
+  message("Records: ", total_rows)
 
   # Show first few records
   preview_count <- min(3, total_rows)
 
-  cat(.gum_style("Preview of first ", preview_count, " record(s):",
-                 color = .gum_colors$muted), "\n", sep = "")
+  message("Preview of first ", preview_count, " record(s):")
 
   for (i in 1:preview_count) {
-    cat("\n", .gum_style(sprintf("Record %d:", i), color = .gum_colors$primary), "\n", sep = "")
+    cat("\n", printf("Record %d:", i), "\n", sep = "")
     # Pretty print JSON
     json_str <- jsonlite::toJSON(rows[[i]], auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null")
-    cat(.gum_style(json_str, color = .gum_colors$muted), "\n", sep = "")
+    cat(json_str, "\n", sep = "")
   }
 
   if (total_rows > preview_count) {
-    cat("\n", .gum_style(sprintf("... and %d more record(s)", total_rows - preview_count),
-                         color = .gum_colors$muted), "\n", sep = "")
+    cat("\n", sprintf("... and %d more record(s)", total_rows - preview_count), "\n", sep = "")
   }
-
+  
   cat("\n")
-  .gum_warning(sprintf("This was a DRY RUN - no data was sent to the API"))
-  cat("  Remove ", .gum_style("dry_run = TRUE", color = .gum_colors$primary), " to execute\n", sep = "")
+  warning(sprintf("This was a DRY RUN - no data was sent to the API"))
+  cat("  Remove ", "dry_run = TRUE", " to execute\n", sep = "")
   cat("\n")
 
   invisible(NULL)

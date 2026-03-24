@@ -83,20 +83,19 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
       if (.is_verbose()) {
         if (!is.null(total_count) && page_size > 0) {
           total_pages <- ceiling(total_count / page_size)
-          cat(.gum_style("Fetching paginated data:", color = .gum_colors$primary),
+          cat("Fetching paginated data:",
               sprintf(" %d pages (~%d records)\n", total_pages, total_count))
         } else {
-          cat(.gum_style("Fetching paginated data...", color = .gum_colors$primary), "\n")
+          cat("Fetching paginated data...", "\n")
         }
       }
 
       while (!is.null(nxt) && is.character(nxt) && nzchar(nxt)) {
         if (.is_verbose()) {
           if (!is.null(total_count) && page_size > 0) {
-            .gum_progress(page_num, total_pages, "Progress")
+            cat(sprintf("\r%s [%d/%d] %d%%", "Progress", current, total, pct))
           } else {
-            cat(.gum_style(sprintf("  Fetching page %d...", page_num),
-                           color = .gum_colors$muted), "\r")
+            cat(sprintf("  Fetching page %d...", page_num), "\r")
             flush.console()
           }
         }
@@ -111,7 +110,7 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
         if (is.null(total_count) || page_size == 0) {
           cat("\n")
         }
-        .gum_success(sprintf("Fetched %d pages successfully", length(pages)))
+        cat(sprintf("Fetched %d pages successfully", length(pages)))
       }
     }
 
