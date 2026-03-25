@@ -83,19 +83,19 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
       if (.is_verbose()) {
         if (!is.null(total_count) && page_size > 0) {
           total_pages <- ceiling(total_count / page_size)
-          cat("Fetching paginated data:",
+          message("Fetching paginated data:",
               sprintf(" %d pages (~%d records)\n", total_pages, total_count))
         } else {
-          cat("Fetching paginated data...", "\n")
+          message("Fetching paginated data...", "\n")
         }
       }
 
       while (!is.null(nxt) && is.character(nxt) && nzchar(nxt)) {
         if (.is_verbose()) {
           if (!is.null(total_count) && page_size > 0) {
-            cat(sprintf("\r%s [%d/%d] %d%%", "Progress", current, total, pct))
+            message(sprintf("\r%s [%d/%d] %d%%", "Progress", current, total, pct))
           } else {
-            cat(sprintf("  Fetching page %d...", page_num), "\r")
+            message(sprintf("  Fetching page %d...", page_num), "\r")
             flush.console()
           }
         }
@@ -108,9 +108,9 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
 
       if (.is_verbose()) {
         if (is.null(total_count) || page_size == 0) {
-          cat("\n")
+          message("\n")
         }
-        cat(sprintf("Fetched %d pages successfully", length(pages)))
+        message(sprintf("Fetched %d pages successfully", length(pages)))
       }
     }
 

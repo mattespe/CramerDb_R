@@ -31,7 +31,7 @@ create <- function(url, data, headers = list(), id_col = "id",
 
   # Show progress if multiple rows
   if (total_rows > 1 && .is_verbose()) {
-    cat("Creating records:",
+    message("Creating records:",
         sprintf(" %d rows\n", total_rows))
   }
 
@@ -98,7 +98,7 @@ update <- function(url, data, headers = list(), id_col = "id",
 
   # Show progress if multiple rows
   if (total_rows > 1 && .is_verbose()) {
-    cat("Updating records:" ,
+    message("Updating records:" ,
         sprintf(" %d rows\n", total_rows))
   }
 
@@ -379,20 +379,18 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   message("Preview of first ", preview_count, " record(s):")
 
   for (i in 1:preview_count) {
-    cat("\n", printf("Record %d:", i), "\n", sep = "")
+    message("\n", printf("Record %d:", i), "\n", sep = "")
     # Pretty print JSON
     json_str <- jsonlite::toJSON(rows[[i]], auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null")
-    cat(json_str, "\n", sep = "")
+    message(json_str, "\n", sep = "")
   }
 
   if (total_rows > preview_count) {
-    cat("\n", sprintf("... and %d more record(s)", total_rows - preview_count), "\n", sep = "")
+    message("\n", sprintf("... and %d more record(s)", total_rows - preview_count))
   }
   
-  cat("\n")
   warning(sprintf("This was a DRY RUN - no data was sent to the API"))
-  cat("  Remove ", "dry_run = TRUE", " to execute\n", sep = "")
-  cat("\n")
+  message("  Remove dry_run = TRUE to execute")
 
   invisible(NULL)
 }

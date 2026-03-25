@@ -53,7 +53,7 @@ endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/", heade
       endpoint_names <- endpoint_names[order(endpoint_names)]
 
       # Display header
-      cat(sprintf("Available endpoints at %s", url))
+      message(sprintf("Available endpoints at %s", url))
 
       # Display each endpoint with styling
       for (name in endpoint_names) {
@@ -62,18 +62,17 @@ endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/", heade
         # Style the endpoint name
         styled_name <- sprintf("  %-20s", name)
 
-        cat(styled_name, endpoint_url, "\n", sep = "")
+        message(styled_name, " ", endpoint_url)
       }
     } else {
       warning(sprintf("No endpoints available at %s", url))
     }
 
-    cat("\n")
     invisible(body)
 
   }, error = function(e) {
-    cat(sprintf("Error fetching %s", url))
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message(sprintf("Error fetching %s", url))
+    message("  ", conditionMessage(e))
     invisible(NULL)
   })
 }
@@ -111,20 +110,20 @@ whoami <- function(base_url = "https://cramerdb.com/api/", headers = list(), sta
     body <- httr2::resp_body_json(res, simplifyVector = FALSE)
 
     # Show auth status with gum styling
-    cat("CramerDB Authentication Status")
+    message("CramerDB Authentication Status")
 
     if (!is.null(body[["authenticated"]])) {
       is_authed <- isTRUE(body[["authenticated"]])
 
       # Display authentication status
       if (is_authed) {
-        cat("Authenticated : YES")
+        message("Authenticated : YES")
 
         if (!is.null(body[["user"]])) {
-          cat("User : ", body[["user"]])
+          message("User : ", body[["user"]])
         }
       } else {
-        cat("Authenticated : NO\n")
+        message("Authenticated : NO")
         warning("Not authenticated\n",
                 "  To authenticate, use: set_token('your_token_here')")
       }
@@ -132,12 +131,11 @@ whoami <- function(base_url = "https://cramerdb.com/api/", headers = list(), sta
       stop("Unable to determine authentication status")
     }
 
-    cat("\n")
     invisible(body)
 
   }, error = function(e) {
-    cat("Error checking authentication")
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message("Error checking authentication")
+    message("  ", conditionMessage(e))
     invisible(NULL)
   })
 }
@@ -202,16 +200,15 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
     }
 
     if (!is.null(field_info) && length(field_info) > 0) {
-      cat(sprintf("Fields at %s", url))
+      message(sprintf("Fields at %s", url))
       for (nm in names(field_info)) {
         fi       <- field_info[[nm]]
         type     <- fi[["type"]] %||% "unknown"
         req_fld  <- if (isTRUE(fi[["required"]])) " (required)" else ""
         styled_nm   <- sprintf("  %-25s", nm)
         styled_type <- paste0(type, req_fld)
-        cat(styled_nm, styled_type, "\n", sep = "")
+        message(styled_nm, " ", styled_type)
       }
-      cat("\n")
       return(names(field_info))
     }
 
@@ -226,11 +223,10 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
     results <- body2[["results"]]
     if (!is.null(results) && length(results) > 0) {
       nms <- names(results[[1]])
-      cat(sprintf("Fields at %s", url))
+      message(sprintf("Fields at %s", url))
       for (nm in nms) {
-        cat(sprintf("  %s", nm), "\n", sep = "")
+        message(sprintf("  %s", nm))
       }
-      cat("\n")
       return(nms)
     }
 
@@ -239,7 +235,7 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
 
   }, error = function(e) {
     message(sprintf("Error fetching fields from %s", url))
-    message("  ", conditionMessage(e), "\n", sep = "")
+    message("  ", conditionMessage(e))
     invisible(NULL)
   })
 
