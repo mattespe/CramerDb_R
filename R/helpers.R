@@ -124,12 +124,13 @@ browse_endpoints <- function(base_url = "https://cramerdb.com/api/", path = NULL
     ep_names <- names(ep_list)
     ep_names <- ep_names[order(ep_names)]
 
-    # Use gum filter for selection
-    message("Browse endpoints at: ", url, "\n\n")
+    message("Browse endpoints at: ", url)
+    message(paste(seq_along(ep_names), ep_names, sep = ": ", collapse = "\n"))
 
-    selected <- .gum_filter(ep_names, prompt = "Search endpoints:")
+    selected <- readline(prompt = "Enter endpoint name (or press Enter to cancel): ")
+    selected <- trimws(selected)
 
-    if (is.null(selected) || length(selected) == 0) {
+    if (!nzchar(selected) || !selected %in% ep_names) {
       message("No selection made")
       return(invisible(NULL))
     }

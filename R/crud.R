@@ -41,7 +41,7 @@ create <- function(url, data, headers = list(), id_col = "id",
       .post_one(url, rows[[i]], headers, style)
       current <<- current + 1
       if (total_rows > 1 && .is_verbose()) {
-        message("Creating " round( current / total_rows))
+        message(sprintf("Creating [%d/%d]", current, total_rows))
       }
     })
   })
@@ -379,7 +379,7 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   message("Preview of first ", preview_count, " record(s):")
 
   for (i in 1:preview_count) {
-    message("\n", printf("Record %d:", i), "\n", sep = "")
+    message(sprintf("Record %d:", i))
     # Pretty print JSON
     json_str <- jsonlite::toJSON(rows[[i]], auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null")
     message(json_str, "\n", sep = "")
