@@ -1,0 +1,78 @@
+<!DOCTYPE html><html><head><title>R: Check authentication status</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
+<script>
+const macros = { "\\R": "\\textsf{R}", "\\mbox": "\\text", "\\code": "\\texttt"};
+function processMathHTML() {
+    var l = document.getElementsByClassName('reqn');
+    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
+    return;
+}</script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
+    onload="processMathHTML();"></script>
+<link rel="stylesheet" type="text/css" href="R.css">
+</head><body><div class="container"><main>
+
+<table style="width: 100%;"><tr><td>whoami {cramerdb}</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Check authentication status</h2>
+
+<h3>Description</h3>
+
+<p>Check if you are authenticated with the CramerDB API and see which user
+you are logged in as.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class='language-R'>whoami(
+  base_url = "https://cramerdb.com/api/",
+  headers = list(),
+  staging = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table role = "presentation">
+<tr><td><code id="base_url">base_url</code></td>
+<td>
+<p>Character. Base API URL (default: &quot;https://cramerdb.com/api/&quot;)</p>
+</td></tr>
+<tr><td><code id="headers">headers</code></td>
+<td>
+<p>Named list of HTTP headers (e.g., list(Authorization = &quot;Token xxx&quot;))</p>
+</td></tr>
+<tr><td><code id="staging">staging</code></td>
+<td>
+<p>Logical. If TRUE, routes requests to the staging server.</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>Invisibly returns the parsed JSON response; prints formatted output
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class='language-R'>## Not run: 
+# Check authentication status
+whoami()
+
+# After setting token
+set_token("your_token_here")
+whoami()
+
+## End(Not run)
+</code></pre>
+
+<hr><div style="text-align: center;">[Package <em>cramerdb</em> version 0.1.0 <a href="00Index.html">Index</a>]</div></main>
+
+</div>
+</body></html>

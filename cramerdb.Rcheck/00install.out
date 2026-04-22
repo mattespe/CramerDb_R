@@ -1,0 +1,26 @@
+* installing *source* package ‘cramerdb’ ...
+** this is package ‘cramerdb’ version ‘0.1.0’
+** using staged installation
+** R
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+  converting help for package ‘cramerdb’
+    finding HTML links ... done
+    browse_endpoints                        html  
+    clear_token                             html  
+    create                                  html  
+    endpoints                               html  
+    fetch                                   html  
+    fields                                  html  
+    get_token                               html  
+    set_token                               html  
+    test_connection                         html  
+    update                                  html  
+    upsert                                  html  
+    whoami                                  html  
+** building package indices
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (cramerdb)

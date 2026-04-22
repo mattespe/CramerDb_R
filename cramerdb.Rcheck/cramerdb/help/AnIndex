@@ -1,0 +1,12 @@
+browse_endpoints	browse_endpoints
+clear_token	clear_token
+create	create
+endpoints	endpoints
+fetch	fetch
+fields	fields
+get_token	get_token
+set_token	set_token
+test_connection	test_connection
+update	update
+upsert	upsert
+whoami	whoami
