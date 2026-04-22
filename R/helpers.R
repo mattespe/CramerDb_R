@@ -22,13 +22,9 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
     req <- httr2::req_timeout(req, 5)  # 5 second timeout
     req <- httr2::req_headers(req, Accept = "application/json")
 
-    cat("  Checking network connectivity...", "\r")
-    flush.console()
-
     res <- httr2::req_perform(req)
 
-    cat("  Checking network connectivity... ")
-    message("OK")
+    message("  Checking network connectivity... OK")
 
   }, error = function(e) {
     message("Cannot reach API server")
@@ -62,7 +58,6 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
       if (!is.null(body[["user"]])) {
         message("  User: ", body[["user"]])
       }
-      cat("\n")
       message("Connection test passed!")
       return(invisible(TRUE))
     } else {
@@ -71,7 +66,7 @@ test_connection <- function(base_url = "https://cramerdb.com/api/", staging = FA
 
   }, error = function(e) {
     message("Authentication check failed")
-    cat("  ", conditionMessage(e), "\n", sep = "")
+    message("  ", conditionMessage(e))
     return(invisible(FALSE))
   })
 }
@@ -162,7 +157,7 @@ browse_endpoints <- function(base_url = "https://cramerdb.com/api/", path = NULL
 # Output message only if verbose
 .verbose_cat <- function(...) {
   if (.is_verbose()) {
-    cat(...)
+    message(...)
   }
 }
 
