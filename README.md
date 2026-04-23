@@ -43,26 +43,22 @@ Keep these files private and do not share or commit them — they contain your A
 
 ```r
 # 1. Set your authentication token
-set_token("your_api_token_here")
+# Preferred: set token as an option in your .Rprofile or as an environmental variable
+# This function exposes you token as plan text on the console and in your .Rhistory file!!!
+#set_token("your_api_token_here")
 
-# 3. Explore available endpoints
+# 2. Explore available endpoints
 endpoints()
 
 endpoints("seine")
 
-# 4. Fetch data
+# 3. Fetch data
 seine_events <- fetch("seine/event/")
-# Fetching paginated data: 5 pages (~1000 records)
-# Progress [5/5] ██████████████████████████████ 100%
-# ✓ Fetched 5 pages successfully
 
 seine_hauls <- fetch("seine/haul/")
 
 # 5. Push data back
 create("seine/event/", new_events)
-# Creating records: 150 rows
-# Creating [150/150] ██████████████████████████████ 100%
-# ✓ Created 150 records successfully
 
 update("seine/event/", updated_events)
 upsert("seine/event/", new_or_updated_events)
@@ -74,28 +70,42 @@ upsert("seine/event/", new_or_updated_events)
 
 ### Set Your Token
 
-Get your API token from the CramerDB web interface (https://cramerdb.com/admin/user/), then store it for the session:
+Get your API token from the CramerDB web interface (https://cramerdb.com/admin/user/). 
+
+The token may be set for the session:
 
 ```r
 set_token("YOUR-API-TOKEN")
 ```
 
-This stores the token in R's session options, so you don't need to pass it with every request.
+However, this exposes the API token as plain text on the console, as well as stores its value in the .Rhistory file (default in RStudio). As the .Rhistory file is often saved and shared accidently, this method is heavily discouraged.
+
+Instead, we recommend storing the key in your `~/.Rprofile` by opening `~/.Rprofile` in a text editor, add this line, save and exit:
+
+```r
+options(cramerdb.token = "your-api-token")
+```
+
+Alternatively, you can save the API key as an environmental variable in your `~/.Renviron`:
+
+```
+CRAMERDB_TOKEN = "your-api-token"
+```
+
+This avoids the API token being printed to the console unless it is explicitly printed.
+
+Users are encouraged to set the file permissions on either file to allow only the user to read via:
+
+```r
+Sys.chmod("~/.Rprofile", mode = "0400")
+```
 
 ### Connection Testing
 
 Verify authentication:
 
 ```r
-test_connection()
-# Testing CramerDB Connection
-# ──────────────────────────
-#
-#   Checking network connectivity...      ✓ OK
-#   Verifying authentication...           ✓ Authenticated
-#   User: john.doe
-#
-# ✓ Connection test passed!
+whoami()
 ```
 
 ### Retrieve Your Token
@@ -106,6 +116,7 @@ To see your current token (for debugging):
 get_token()
 # [1] "YOUR-API-TOKEN"
 ```
+See above notes regarding token security.
 
 ---
 
@@ -288,7 +299,7 @@ create("core/site/", sites)
 
 ## Advanced Features
 
-### 🧪 Dry-Run Mode
+### Dry-Run Mode
 
 Preview what would be sent before actually sending it:
 
@@ -296,26 +307,12 @@ Preview what would be sent before actually sending it:
 # See what would be created without actually sending
 create("seine/event/", new_events, dry_run = TRUE)
 
-# Output shows:
-# DRY RUN: CREATE Preview
-# ──────────────────────────
-#
-# Operation: CREATE
-# Endpoint:  https://cramerdb.com/api/seine/event/
-# Records:   150
-#
-# Preview of first 3 record(s):
-# [JSON preview of records...]
-#
-# ⚠ This was a DRY RUN - no data was sent to the API
-#   Remove dry_run = TRUE to execute
-
 # Works with update() and upsert() too
 update("seine/event/", events, dry_run = TRUE)
 upsert("seine/event/", events, dry_run = TRUE)
 ```
 
-### 🔇 Verbose/Quiet Control
+### Verbose/Quiet Control
 
 Control output verbosity for scripts vs interactive use:
 
@@ -328,8 +325,7 @@ fetch("seine/event/")  # Silent operation
 options(cramerdb.verbose = TRUE)
 fetch("seine/event/")  # Shows progress bars and messages
 
-# Default: verbose in interactive sessions, quiet in scripts
-# (automatically detected via interactive())
+# Default: quiet 
 ```
 
 ---
@@ -343,6 +339,12 @@ If you need to use a different API base URL:
 ```r
 fetch("seine/event/", base_url = "https://staging.cramerdb.com/api/")
 create("seine/event/", data, base_url = "https://staging.cramerdb.com/api/")
+```
+
+Note, URLs are checked against accepted Hosts (base URLs) to avoid accidently sending the API key to non-Cramer host. Additional hosts can be added via:
+
+```r
+options(cramerdb.allowed_hosts = "custom-url")
 ```
 
 ### Custom ID Column
@@ -379,10 +381,8 @@ create("seine/event/", large_dataset, chunk_size = 50)
 
 ```r
 library(cramerdb)
-library(dplyr)
 
 # 1. Authenticate
-set_token("your_token_here")
 whoami()
 
 # 2. Explore the API
@@ -398,8 +398,8 @@ seine_events_hw <- fetch("seine/event/", query = list(project = "Hallwood"))
 seine_hauls <- fetch("seine/haul/")
 
 # 5. Analyze/modify data
-seine_events <- seine_events %>%
-  filter(event_date > "2024-01-01") %>%
+seine_events <- seine_events |>
+  filter(event_date > "2024-01-01") |>
   mutate(notes = paste(notes, "- Reviewed"))
 
 # 6. Update records
@@ -435,7 +435,7 @@ updated_events <- fetch("seine/event/")
 
 | Function | Description |
 |----------|-------------|
-| `set_token(token)` | Store API token (auto-saves to keyring) |
+| `set_token(token)` | Set token for session |
 | `get_token()` | Retrieve current token |
 | `clear_token()` | Remove token from current session |
 | `whoami()` | Check authentication status |
@@ -446,15 +446,7 @@ updated_events <- fetch("seine/event/")
 |----------|-------------|
 | `endpoints(path)` | List available API endpoints |
 | `fields(path)` | List field names at an endpoint |
-| `browse_endpoints()` | Interactive endpoint browser (requires gum) |
-| `test_connection()` | Test API connectivity and authentication |
 
-### Enhancement Tools
-
-| Function | Description |
-|----------|-------------|
-| `install_gum()` | Install gum CLI for beautiful output |
-| `check_gum()` | Verify gum installation |
 
 ---
 
@@ -463,7 +455,7 @@ updated_events <- fetch("seine/event/")
 ### "Unexpected content type text/html"
 
 This error occurs when not authenticated. Make sure to:
-1. Set your token: `set_token("your_token")`
+1. Set your token 
 2. Verify authentication: `whoami()`
 
 ### "Failed to parse URL: Bad scheme"
@@ -472,13 +464,10 @@ Make sure to reload the package after installation:
 ```r
 devtools::load_all()  # if developing
 # or
-library(cramerdb)  # after restarting R
+library(cramerDBlite)  # after restarting R
 ```
 
 ### "HTTP 401 Unauthorized"
 
 Your token may be invalid or expired. Get a new token from the CramerDB web interface and set it again:
-```r
-set_token("new_token_here")
-```
 
