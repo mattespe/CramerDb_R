@@ -16,40 +16,37 @@ devtools::check()
 
 # Install dependencies
 pak::pak()
+
+# Run unit tests (source-based, not testthat)
+source("tests/test_unit.R")
 ```
 
-There are no automated tests in this package yet.
+There is also an integration script at `inst/scripts/test_integration.R` that requires a live API token.
 
 ## Architecture
 
-`cramerdb` is a thin R client over the CramerDB Django REST Framework API at `https://cramerdb.com/api/`. All public functions accept a `base_url` and `staging` parameter as an escape hatch.
+`cramerDBlite` is a thin R client over the CramerDB Django REST Framework API at `https://cramerdb.com/api/`. All public functions accept a `base_url` and `staging` parameter as an escape hatch.
 
 ### File layout
 
-- `R/auth.R` — token storage/retrieval (`set_token`, `get_token`, `clear_token`, `whoami`). Token lookup priority: R options → system keyring (`keyring` package, optional) → `CRAMERDB_TOKEN` env var.
-- `R/fetch.R` — `fetch()` and its pagination/normalization pipeline.
-- `R/crud.R` — `create()`, `update()`, `upsert()` and their HTTP helpers.
-- `R/list.R` — `endpoints()`, `fields()`, `whoami()`, `browse_endpoints()`.
-- `R/helpers.R` — `test_connection()`, `browse_endpoints()`, shared `.is_verbose()`.
-- `R/zzz.R` — `.onAttach` startup message + update check.
+- `R/auth.R` — token storage/retrieval: `set_token`, `get_token`, `clear_token`. Token lookup priority: R options (`cramerdb.token`) → `CRAMERDB_TOKEN` env var.
+- `R/fetch.R` — `fetch()`, `whoami()`, and their pagination/normalization pipeline.
+- `R/crud.R` — `create()`, `update()`, `upsert()`, and their HTTP helpers.
+- `R/endpoints.R` — `endpoints()` and `fields()` for API discovery.
+- `R/utils.R` — all shared internal helpers: `%||%`, `.normalize_url()`, `.resolve_base_url()`, `.check_url_trusted()`, `.add_headers()`, `.is_verbose()`, `.join_url()`.
 
 ### Key internal patterns
 
 **Authentication**: `.auth_headers(headers)` is called at the top of every public function. It injects `Authorization: Token <token>` unless the caller already supplied an `Authorization` header.
 
-**URL normalization**: `.normalize_url(url, base_url)` prepends `base_url` to relative paths. `.resolve_base_url(base_url, staging)` swaps in the staging host when `staging = TRUE`.
+**Security guard**: `.check_url_trusted(url)` is called after URL resolution in every public function. It rejects any host not in `c("cramerdb.com", "staging.cramerdb.com")` plus `getOption("cramerdb.allowed_hosts")`. This prevents credential leakage when a user passes an arbitrary URL.
 
-**fetch() pipeline**: `fetch()` → `.fetch_pages()` (handles DRF pagination via `next` links) → `.normalize_pages_to_df()` (dispatches to `.features_to_tbl()` for GeoJSON FeatureCollections or `.objects_to_tbl()` for plain JSON arrays).
+**URL normalization**: `.normalize_url(url, base_url)` prepends `base_url` to relative paths (uses `httr2::url_parse` with a `base_url` argument). `.resolve_base_url(base_url, staging)` swaps in the staging host when `staging = TRUE` or `getOption("cramerdb.staging")` is set.
 
-**CRUD pipeline**: Each of `create/update/upsert` serializes the input data frame with `.as_row_list()` (which also extracts lon/lat from `sf` geometries into `.lon`/`.lat` columns), then iterates row-by-row calling `.post_one()` or `.patch_one()`. Batching via `chunk_size` controls progress messaging, not the HTTP calls (each row is still one request).
+**fetch() pipeline**: `fetch()` → `.fetch_pages()` (handles DRF pagination via `next` links, prints progress when `verbose = TRUE`) → `.normalize_pages_to_df()` (dispatches to `.features_to_tbl()` for GeoJSON FeatureCollections or `.objects_to_tbl()` for plain JSON arrays). `fetch()` always returns a plain tibble/data.frame, never an `sf` object.
 
-**sf / GeoJSON**: `fetch()` returns a plain tibble (not sf) even for GeoJSON endpoints — the README mentions an `as_sf` parameter but it is not implemented. For writes, `create/update/upsert` auto-detect `inherits(data, "sf")` and serialize as GeoJSON Features (`style = "feature"`).
+**CRUD pipeline**: Each of `create/update/upsert` serializes the input data frame with `.as_row_list()` (which also extracts lon/lat from `sf` geometries into `.lon`/`.lat` columns), then iterates row-by-row calling `.post_one()` or `.patch_one()`. `chunk_size` controls progress message grouping only — each row is still one HTTP request. All three functions support a `dry_run = TRUE` flag that prints a preview of the first three records without sending any requests.
 
-**Verbosity**: `.is_verbose()` returns `interactive()` by default; override with `options(cramerdb.verbose = TRUE/FALSE)`. All progress output uses `message()` so it can be suppressed with `suppressMessages()`.
+**sf / GeoJSON**: For writes, `create/update/upsert` auto-detect `inherits(data, "sf")` and serialize as GeoJSON Features (`style = "feature"`). The `sf` package is a `Suggests` dependency and loaded lazily.
 
-### Known issues in the codebase
-
-- Several internal helpers (`.add_headers`, `.normalize_url`, `.build_endpoint_url`, `.is_verbose`) are defined redundantly in multiple files. The last-loaded definition wins at runtime.
-- `crud.R` line 44 has a syntax error in the progress message: `message("Creating " round(...))` is missing a paste/sprintf call — `create()` will error on multi-row inputs in verbose mode.
-- `fetch.R`'s `.fetch_pages()` references `current` and `total` variables in the progress branch that are never assigned, so pagination progress messages will error.
-- The `%||%` null-coalescing operator is defined at the bottom of `fetch.R` and is used package-wide; it is not exported.
+**Verbosity**: `.is_verbose()` checks `getOption("cramerdb_verbose", FALSE)`. All progress output uses `message()`. Note the option name is `cramerdb_verbose` (underscore), not `cramerdb.verbose` (dot).
