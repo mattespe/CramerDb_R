@@ -1,22 +1,29 @@
-# cramerdb
+# cramerDBlite
 
 **cramerdb** is an R package for interacting with the CramerDB API. It provides simple functions to explore endpoints, fetch data into data frames or spatial objects (sf), and push data back to the database.
+
+**cramerDBlite** is a modified version of the `cramerdb` package. The modifications focused on:
+
+- minimal dependencies
+- simplified code and decreased code complexity
+- additional tests
+- security improvements
+- decreased verbosity
+
+The `cramerDBlite` package is roughly 1/3 the amount of code while preserving essential functionality.
 
 ## Installation
 
 ```r
-# One-time: install pak if you don't have it
-options(pkgType = "binary")
-install.packages("pak", type = "binary")
 
 # Install cramerdb from GitHub
-pak::pak("ConnerSwineford/CramerDb_R")
+pak::pak("mattespe/CramerDb_R@lite")
 
 # Load the package
-library(cramerdb)
+library(cramerDBlite)
 ```
 
-### 🔒 Secure Token Storage
+### Secure Token Storage
 
 Tokens are automatically stored in your system's secure credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service) and persist across R sessions:
 
@@ -36,46 +43,11 @@ clear_token()
 
 **Note:** Install the `keyring` package for persistent storage: `install.packages("keyring")`
 
-### 🎨 Enable Beautiful Output (Optional)
-
-For enhanced terminal output with colors, progress bars, and styled formatting, simply run:
-
-```r
-# Automatically installs gum for your OS
-install_gum()
-```
-
-That's it! The function detects your operating system (macOS, Linux, or Windows) and installs [gum CLI](https://github.com/charmbracelet/gum) automatically.
-
-**What you get with gum:**
-- 🎨 Color styled headers and output
-- 📊 Real-time progress bars for fetch pagination and bulk operations
-- ✓ Success/warning/error indicators
-- 🎯 Beautiful formatted tables for endpoints
-
-**Check installation:**
-```r
-check_gum()  # Verify gum is working
-```
-
-**Without gum:** The package works perfectly fine - it automatically falls back to plain text output.
-
 ## Quick Start
 
 ```r
 # 1. Set your authentication token
 set_token("your_api_token_here")
-
-# 2. Quick health check before running operations
-test_connection()
-# Testing CramerDB Connection
-# ──────────────────────────
-#
-#   Checking network connectivity...      ✓ OK
-#   Verifying authentication...           ✓ Authenticated
-#   User: john.doe
-#
-# ✓ Connection test passed!
 
 # 3. Explore available endpoints
 endpoints()

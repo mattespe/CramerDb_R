@@ -1,10 +1,9 @@
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 .normalize_url <- function(url, base_url = "https://cramerdb.com/api/") {
-  if (!is.null(httr2::url_parse(url)$scheme)) return(url)
-  base <- httr2::url_parse(base_url)
-  base$path <- paste0(sub("/*$", "/", base$path), sub("^/+", "", url))
-  httr2::url_build(base)
+  if (!endsWith(base_url, "/")) base_url <- paste0(base_url, "/")
+  url <- sub("^/+", "", url)
+  httr2::url_build(httr2::url_parse(url, base_url = base_url))
 }
 
 .resolve_base_url <- function(base_url, staging = FALSE) {

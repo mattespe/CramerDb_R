@@ -1,4 +1,4 @@
-Package: cramerdb_lite
+Package: cramerDBlite
 Type: Package
 Title: Simple API → Data Frame (and PostGIS-ready) for Cramer DB
 Version: 0.1.0
@@ -6,7 +6,7 @@ Authors@R:
     c(person(given = "Conner", family = "Swineford", role = c("aut","cre"),
              email = "conner.swineford@fishsciences.net"),
 	person(given = "Matt", family = "Espe", role = c("aut"),
-             email = "matt.espe@fishsciences.net"),
+             email = "matt.espe@fishsciences.net")
 			 )
 Description: Minimal client for the CramerDB REST API. Fetches paginated JSON/GeoJSON into data frames and writes data frames back via POST/PATCH.
 License: MIT
