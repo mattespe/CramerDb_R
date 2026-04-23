@@ -15,9 +15,8 @@ The token string, or NULL if not set (and \code{error_if_missing = FALSE}).
 \description{
 Retrieves the token from (in order of priority):
 \enumerate{
-\item R options (current session)
-\item System keyring (if available)
-\item CRAMERDB_TOKEN environment variable
+\item R options (\code{getOption("cramerdb.token")})
+\item \code{CRAMERDB_TOKEN} environment variable
 }
 }
 \examples{

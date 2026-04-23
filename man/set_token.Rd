@@ -4,29 +4,24 @@
 \alias{set_token}
 \title{Set the CramerDB API token for this R session}
 \usage{
-set_token(token, persist = TRUE)
+set_token(token)
 }
 \arguments{
 \item{token}{Character scalar token value (no "Token " prefix needed).}
-
-\item{persist}{Logical. If TRUE (default), store in system keyring for persistence
-across sessions. If FALSE, store only in R options for current session.}
 }
 \description{
-Stores the token securely in your system's credential store (Keychain on macOS,
-Credential Manager on Windows, Secret Service on Linux). The token persists
-across R sessions and is retrieved automatically when needed.
-}
-\details{
-If the keyring package is not available, falls back to storing in R options
-for the current session only.
+Stores the token in R options for the current session. In interactive
+sessions you will be prompted to confirm, since the token will appear in
+plain text in \code{.Rhistory}. For persistent storage across sessions, set the
+option in your \verb{~/.Rprofile} or use the \code{CRAMERDB_TOKEN} environment
+variable in \verb{~/.Renviron} instead.
 }
 \examples{
 \dontrun{
-# Store token securely (persists across sessions)
+# Session-only (prompts for confirmation in interactive use)
 set_token("abcd1234...")
 
-# Session-only storage
-set_token("abcd1234...", persist = FALSE)
+# Preferred: add to ~/.Rprofile for persistence without exposing in .Rhistory
+# options(cramerdb.token = "abcd1234...")
 }
 }

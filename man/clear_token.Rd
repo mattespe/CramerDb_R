@@ -10,7 +10,7 @@ clear_token()
 Invisibly returns TRUE
 }
 \description{
-Removes the token from both the current R session and the system keyring.
+Removes the token from the current R session options.
 }
 \examples{
 \dontrun{

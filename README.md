@@ -23,25 +23,21 @@ pak::pak("mattespe/CramerDb_R@lite")
 library(cramerDBlite)
 ```
 
-### Secure Token Storage
+### Persistent Token Storage
 
-Tokens are automatically stored in your system's secure credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service) and persist across R sessions:
+To avoid calling `set_token()` each session, add the option to your `~/.Rprofile`:
 
 ```r
-# First time setup
-set_token("your_api_token")
-# Token stored securely in system keyring
-# (Will auto-load in future R sessions)
-
-# Later sessions - token loads automatically
-library(cramerdb)
-whoami()  # Just works!
-
-# Clear token when needed
-clear_token()
+options(cramerdb.token = "your_api_token")
 ```
 
-**Note:** Install the `keyring` package for persistent storage: `install.packages("keyring")`
+Alternatively, set the `CRAMERDB_TOKEN` environment variable in your `~/.Renviron`:
+
+```
+CRAMERDB_TOKEN=your_api_token
+```
+
+Keep these files private and do not share or commit them — they contain your API token in plain text.
 
 ## Quick Start
 
@@ -441,7 +437,7 @@ updated_events <- fetch("seine/event/")
 |----------|-------------|
 | `set_token(token)` | Store API token (auto-saves to keyring) |
 | `get_token()` | Retrieve current token |
-| `clear_token()` | Remove token from keyring and session |
+| `clear_token()` | Remove token from current session |
 | `whoami()` | Check authentication status |
 
 ### Discovery & Navigation
