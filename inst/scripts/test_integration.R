@@ -5,7 +5,7 @@
 #   Rscript tests/test_integration.R
 #   # or from R: source("tests/test_integration.R")
 
-library(cramerdb)
+library(cramerDBlite)
 
 # set_token("your_token_here")   # uncomment if token not already stored
 
@@ -13,6 +13,11 @@ library(cramerdb)
 tok <- get_token()
 stopifnot(is.character(tok), nzchar(tok))
 whoami()
+
+# --- endpoints  ---------------------------------------------------------------
+endpoints()
+endpoints("core/")
+message("Endpoints: OK")
 
 # --- fetch (single page) ------------------------------------------------------
 df <- fetch("core/site/", query = list(page_size = 5))
