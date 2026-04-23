@@ -2,32 +2,35 @@
 % Please edit documentation in R/fetch.R
 \name{fetch}
 \alias{fetch}
-\title{Fetch any Cramer API endpoint into a tibble}
+\title{Fetch any CramerDB endpoint into a data frame}
 \usage{
 fetch(
   url,
   headers = list(),
   base_url = "https://cramerdb.com/api/",
   staging = FALSE,
-  query = list()
+  query = list(),
+  verbose = getOption("cramerdb_verbose", FALSE)
 )
 }
 \arguments{
-\item{url}{Character. Full URL or relative path (e.g., "tagging/event/").
-Relative paths are prepended with base_url.}
+\item{url}{Character. Full URL or relative path (e.g. \code{"tagging/event/"}).}
 
-\item{headers}{Named list of HTTP headers (e.g., list(Authorization = "Token xxx")).}
+\item{headers}{Named list of additional HTTP headers.}
 
-\item{base_url}{Character. Base API URL (default: "https://cramerdb.com/api/")}
+\item{base_url}{Character. Base API URL.}
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
 
 \item{query}{Named list of query parameters appended to the URL.}
+
+\item{verbose}{Logical. Print pagination progress. Defaults to
+\code{getOption("cramerdb_verbose", FALSE)}.}
 }
 \value{
-A \code{tibble}.
+A \code{data.frame}.
 }
 \description{
-\code{fetch()} follows pagination automatically and normalizes both
-plain JSON lists and GeoJSON FeatureCollections into a plain \code{tibble}.
+Follows DRF pagination automatically and normalizes both plain JSON arrays
+and GeoJSON FeatureCollections into a \code{data.frame}.
 }

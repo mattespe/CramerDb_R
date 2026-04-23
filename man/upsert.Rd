@@ -2,7 +2,7 @@
 % Please edit documentation in R/crud.R
 \name{upsert}
 \alias{upsert}
-\title{Upsert records via API (PATCH if id present & exists; otherwise POST)}
+\title{Upsert records via API (PATCH if id exists; POST otherwise)}
 \usage{
 upsert(
   url,
@@ -13,28 +13,36 @@ upsert(
   chunk_size = 200L,
   base_url = "https://cramerdb.com/api/",
   dry_run = FALSE,
-  staging = FALSE
+  staging = FALSE,
+  verbose = getOption("cramerdb_verbose", FALSE)
 )
 }
 \arguments{
-\item{url}{Endpoint - full URL or relative path (e.g., "seine/event/" or "https://cramerdb.com/api/seine/event/")}
+\item{url}{Endpoint - full URL or relative path (e.g. \code{"seine/event/"}).}
 
-\item{data}{data.frame or sf tibble}
+\item{data}{\code{data.frame} or \code{sf} object.}
 
-\item{headers}{named list of HTTP headers}
+\item{headers}{Named list of additional HTTP headers.}
 
-\item{id_col}{primary key col (default "id")}
+\item{id_col}{Name of the primary key column (default \code{"id"}).}
 
-\item{style}{"auto", "plain", or "feature"}
+\item{style}{\code{"auto"}, \code{"plain"}, or \code{"feature"} (GeoJSON). \code{"auto"} picks
+\code{"feature"} for \code{sf} objects, \code{"plain"} otherwise.}
 
-\item{chunk_size}{number of rows per request batch}
+\item{chunk_size}{Controls progress message grouping (each row is still one request).}
 
-\item{base_url}{Character. Base API URL (default: "https://cramerdb.com/api/")}
+\item{base_url}{Character. Base API URL.}
 
-\item{dry_run}{Logical. If TRUE, show what would be sent without actually sending. Useful for validation.}
+\item{dry_run}{Logical. Preview what would be sent without sending.}
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
+
+\item{verbose}{Logical. Print per-row progress. Defaults to
+\code{getOption("cramerdb_verbose", FALSE)}.}
+}
+\value{
+Invisibly returns \code{TRUE}.
 }
 \description{
-Upsert records via API (PATCH if id present & exists; otherwise POST)
+Upsert records via API (PATCH if id exists; POST otherwise)
 }

@@ -13,27 +13,35 @@ create(
   chunk_size = 200L,
   base_url = "https://cramerdb.com/api/",
   dry_run = FALSE,
-  staging = FALSE
+  staging = FALSE,
+  verbose = getOption("cramerdb_verbose", FALSE)
 )
 }
 \arguments{
-\item{url}{Endpoint - full URL or relative path (e.g., "seine/event/" or "https://cramerdb.com/api/seine/event/")}
+\item{url}{Endpoint - full URL or relative path (e.g. \code{"seine/event/"}).}
 
-\item{data}{data.frame or sf tibble}
+\item{data}{\code{data.frame} or \code{sf} object.}
 
-\item{headers}{named list of HTTP headers (e.g., list(Authorization = "Token ..."))}
+\item{headers}{Named list of additional HTTP headers.}
 
-\item{id_col}{primary key col (default "id"). If missing or NA, server may assign.}
+\item{id_col}{Name of the primary key column (default \code{"id"}).}
 
-\item{style}{"auto", "plain", or "feature" (GeoJSON Feature). "auto" picks "feature" for sf, else "plain".}
+\item{style}{\code{"auto"}, \code{"plain"}, or \code{"feature"} (GeoJSON). \code{"auto"} picks
+\code{"feature"} for \code{sf} objects, \code{"plain"} otherwise.}
 
-\item{chunk_size}{number of rows per request batch (each row is one request; chunking controls progress/messages)}
+\item{chunk_size}{Controls progress message grouping (each row is still one request).}
 
-\item{base_url}{Character. Base API URL (default: "https://cramerdb.com/api/")}
+\item{base_url}{Character. Base API URL.}
 
-\item{dry_run}{Logical. If TRUE, show what would be sent without actually sending. Useful for validation.}
+\item{dry_run}{Logical. Preview what would be sent without sending.}
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
+
+\item{verbose}{Logical. Print per-row progress. Defaults to
+\code{getOption("cramerdb_verbose", FALSE)}.}
+}
+\value{
+Invisibly returns \code{TRUE}.
 }
 \description{
 Create new records via API (POST)

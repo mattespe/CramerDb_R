@@ -1,22 +1,22 @@
-Package: cramerdb
+Package: cramerdb_lite
 Type: Package
 Title: Simple API → Data Frame (and PostGIS-ready) for Cramer DB
 Version: 0.1.0
 Authors@R:
     c(person(given = "Conner", family = "Swineford", role = c("aut","cre"),
-             email = "conner.swineford@fishsciences.net"))
-Description: One-call helpers to fetch paginated JSON/GeoJSON APIs into data frames or sf tibbles.
+             email = "conner.swineford@fishsciences.net"),
+	person(given = "Matt", family = "Espe", role = c("aut"),
+             email = "matt.espe@fishsciences.net"),
+			 )
+Description: Minimal client for the CramerDB REST API. Fetches paginated JSON/GeoJSON into data frames and writes data frames back via POST/PATCH.
 License: MIT
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports:
     httr2,
-    jsonlite,
-    tibble,
-    dplyr,
-    purrr,
-    sf
+    jsonlite
 Suggests:
+    sf,
     keyring
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
