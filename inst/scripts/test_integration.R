@@ -19,6 +19,11 @@ endpoints()
 endpoints("core/")
 message("Endpoints: OK")
 
+# --- fields -------------------------------------------------------------------
+flds <- fields("seine/event/")
+stopifnot(is.character(flds), length(flds) > 0)
+message("fields: OK (", length(flds), " fields)")
+
 # --- fetch (single page) ------------------------------------------------------
 df <- fetch("core/site/", query = list(page_size = 5))
 stopifnot(is.data.frame(df), nrow(df) > 0)
