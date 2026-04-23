@@ -44,4 +44,20 @@ df <- data.frame(id = c(1L, NA_integer_), name = c("a", "b"), stringsAsFactors =
 rows <- cramerdb:::.as_row_list(df, "id")
 stopifnot(length(rows) == 2, is.null(rows[[2]]$id))
 
+# --- .check_url_trusted -------------------------------------------------------
+cramerdb:::.check_url_trusted("https://cramerdb.com/api/sites/")
+cramerdb:::.check_url_trusted("https://staging.cramerdb.com/api/sites/")
+
+stopifnot(
+  inherits(
+    tryCatch(cramerdb:::.check_url_trusted("https://httpbin.org/"), error = identity),
+    "error"
+  )
+)
+
+old_opts <- options(cramerdb.allowed_hosts = "httpbin.org")
+cramerdb:::.check_url_trusted("https://httpbin.org/")
+cramerdb:::.check_url_trusted("https://cramerdb.com/api/")
+options(old_opts)
+
 message("All unit tests passed.")

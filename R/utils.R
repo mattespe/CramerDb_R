@@ -13,6 +13,25 @@
     base_url
 }
 
+.allowed_hosts <- function() {
+  defaults <- c("cramerdb.com", "staging.cramerdb.com")
+  extra <- getOption("cramerdb.allowed_hosts", character(0))
+  unique(c(defaults, extra))
+}
+
+.check_url_trusted <- function(url) {
+  host <- httr2::url_parse(url)$hostname
+  allowed <- .allowed_hosts()
+  if (!host %in% allowed) {
+    stop(
+      sprintf("Refusing to send credentials to untrusted host '%s'.\n", host),
+      sprintf("Add it with: options(cramerdb.allowed_hosts = c('%s'))", host),
+      call. = FALSE
+    )
+  }
+  invisible(url)
+}
+
 .add_headers <- function(req, headers) {
   if (length(headers) > 0) req <- do.call(httr2::req_headers, c(list(req), headers))
   req

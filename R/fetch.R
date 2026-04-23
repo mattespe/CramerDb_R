@@ -18,6 +18,7 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
+  .check_url_trusted(url)
 
   if (length(query) > 0) {
     query <- .prepare_query(query)
@@ -37,6 +38,7 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
   headers  <- .auth_headers(list())
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url("users/me/", base_url)
+  .check_url_trusted(url)
   res      <- .fetch_once(url, headers, labels = FALSE)
   message("Logged in as: ", res[["username"]] %||% res[["email"]] %||% "(unknown)")
   invisible(res)
