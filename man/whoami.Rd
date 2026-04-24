@@ -4,12 +4,21 @@
 \alias{whoami}
 \title{Check who is authenticated}
 \usage{
-whoami(base_url = "https://cramerdb.com/api/", staging = FALSE)
+whoami(
+  base_url = "https://cramerdb.com/api/",
+  staging = FALSE,
+  timeout = 60L,
+  max_tries = 3L
+)
 }
 \arguments{
 \item{base_url}{Character. Base API URL.}
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
+
+\item{timeout}{Integer. Request timeout in seconds. Default 60.}
+
+\item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
 }
 \value{
 Invisibly returns the parsed response list.

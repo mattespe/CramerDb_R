@@ -10,11 +10,14 @@
 #' @param query Named list of query parameters appended to the URL.
 #' @param verbose Logical. Print pagination progress. Defaults to
 #'   `getOption("cramerdb_verbose", FALSE)`.
+#' @param timeout Integer. Request timeout in seconds. Default 60.
+#' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return A `data.frame`.
 #' @export
 fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
                   staging = FALSE, query = list(),
-                  verbose = getOption("cramerdb_verbose", FALSE)) {
+                  verbose = getOption("cramerdb_verbose", FALSE),
+                  timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
@@ -25,21 +28,25 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
     url   <- do.call(httr2::req_url_query, c(list(httr2::request(url)), query))$url
   }
 
-  .normalize_pages_to_df(.fetch_pages(url, headers, verbose = verbose))
+  .normalize_pages_to_df(.fetch_pages(url, headers, verbose = verbose,
+                                      timeout = timeout, max_tries = max_tries))
 }
 
 #' Check who is authenticated
 #'
 #' @param base_url Character. Base API URL.
 #' @param staging Logical. If TRUE, routes requests to the staging server.
+#' @param timeout Integer. Request timeout in seconds. Default 60.
+#' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns the parsed response list.
 #' @export
-whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
+whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
+                   timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(list())
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url("", base_url)
   .check_url_trusted(url)
-  res      <- .fetch_once(url, headers, labels = FALSE)
+  res      <- .fetch_once(url, headers, labels = FALSE, timeout = timeout, max_tries = max_tries)
   message("Logged in as: ", res[["user"]])
   invisible(res)
 }
@@ -54,19 +61,23 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
   grepl(paste0("(?i)([?&])", name, "(=|&|$)"), url, perl = TRUE)
 }
 
-.fetch_once <- function(url, headers = list(), labels = TRUE) {
+.fetch_once <- function(url, headers = list(), labels = TRUE, timeout, max_tries) {
   req <- httr2::request(url)
+  req <- httr2::req_timeout(req, timeout)
   req <- httr2::req_headers(req, Accept = "application/json")
   req <- .add_headers(req, headers)
   if (isTRUE(labels) && !.has_query_param(url, "labels"))
     req <- do.call(httr2::req_url_query, c(list(req), list(labels = "1")))
+  req <- httr2::req_retry(req, max_tries = max_tries,
+                          is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
   res <- httr2::req_perform(req)
   httr2::resp_check_status(res)
   httr2::resp_body_json(res, simplifyVector = FALSE)
 }
 
-.fetch_pages <- function(url, headers = list(), labels = TRUE, verbose = FALSE) {
-  body <- .fetch_once(url, headers, labels = labels)
+.fetch_pages <- function(url, headers = list(), labels = TRUE, verbose = FALSE,
+                         timeout, max_tries) {
+  body <- .fetch_once(url, headers, labels = labels, timeout = timeout, max_tries = max_tries)
 
   if (!is.list(body) || is.null(body[["results"]])) return(list(body))
 
@@ -92,7 +103,7 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
       else
         message(sprintf("Fetching page %d...", page_num))
     }
-    pg     <- .fetch_once(nxt, headers, labels = labels)
+    pg     <- .fetch_once(nxt, headers, labels = labels, timeout = timeout, max_tries = max_tries)
     pages  <- c(pages, list(pg))
     nxt    <- pg[["next"]]
     page_num <- page_num + 1L
@@ -118,30 +129,20 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE) {
 }
 
 .bind_rows <- function(rows) {
-  rows <- Filter(Negate(is.null), rows)
+  rows <- rows[!vapply(rows, is.null, logical(1L))]
   if (length(rows) == 0) return(data.frame())
   all_cols <- unique(unlist(lapply(rows, names)))
 
-  # coerce logical → character when the same column is character in other rows
-  for (nm in all_cols) {
-    classes <- vapply(rows, function(df) {
-      if (nm %in% names(df)) class(df[[nm]])[1L] else NA_character_
-    }, character(1L))
-    if ("character" %in% classes && any(classes == "logical", na.rm = TRUE)) {
-      rows <- lapply(rows, function(df) {
-        if (nm %in% names(df) && is.logical(df[[nm]])) df[[nm]] <- as.character(df[[nm]])
-        df
-      })
-    }
-  }
-
-  # fill missing columns with NA then rbind
-  rows <- lapply(rows, function(df) {
-    missing <- setdiff(all_cols, names(df))
-    if (length(missing)) df[missing] <- NA
-    df[all_cols]
+  cols <- lapply(all_cols, function(nm) {
+    vals <- lapply(rows, function(df) if (nm %in% names(df)) df[[nm]] else NA)
+    tryCatch(
+      do.call(c, vals),
+      error = function(e) as.character(vapply(vals, format, character(1L)))
+    )
   })
-  result <- do.call(rbind, rows)
+  names(cols) <- all_cols
+
+  result <- as.data.frame(cols, stringsAsFactors = FALSE)
   rownames(result) <- NULL
   result
 }

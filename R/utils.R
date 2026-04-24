@@ -37,8 +37,6 @@
   req
 }
 
-.is_verbose <- function() isTRUE(getOption("cramerdb_verbose", FALSE))
-
 .join_url <- function(base, id) {
   base <- as.character(base)
   id   <- utils::URLencode(as.character(id), reserved = TRUE)

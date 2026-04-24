@@ -9,14 +9,19 @@
 #' @param base_url Character. Base API URL.
 #' @param dry_run Logical. Preview what would be sent without sending.
 #' @param staging Logical. If TRUE, routes requests to the staging server.
-#' @param verbose Logical. Print per-row progress. Defaults to
+#' @param verbose Logical. Print per-chunk progress. Defaults to
 #'   `getOption("cramerdb_verbose", FALSE)`.
+#' @param timeout Integer. Request timeout in seconds. Default 60.
+#' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns `TRUE`.
 #' @export
 create <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
                    base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE)) {
+                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
+                   timeout = 60L, max_tries = 3L) {
+  if (!is.data.frame(data))
+    stop("'data' must be a data.frame or sf object.", call. = FALSE)
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
@@ -25,11 +30,11 @@ create <- function(url, data, headers = list(), id_col = "id",
   rows     <- .as_row_list(data, id_col)
   n        <- length(rows)
 
-  if (dry_run) { .show_dry_run("CREATE", url, rows, n); return(invisible(NULL)) }
+  if (dry_run) { .show_dry_run("CREATE", url, rows, n); return(invisible(TRUE)) }
 
-  for (i in seq_len(n)) {
-    .post_one(url, rows[[i]], headers, style)
-    if (n > 1 && verbose) message(sprintf("Creating [%d/%d]", i, n))
+  for (chunk in .chunk_indices(n, chunk_size)) {
+    for (i in chunk) .post_one(url, rows[[i]], headers, style, timeout, max_tries)
+    if (n > 1 && verbose) message(sprintf("Creating [%d/%d]", max(chunk), n))
   }
   if (n > 1 && verbose) message(sprintf("Created %d records", n))
   invisible(TRUE)
@@ -42,7 +47,10 @@ create <- function(url, data, headers = list(), id_col = "id",
 update <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
                    base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE)) {
+                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
+                   timeout = 60L, max_tries = 3L) {
+  if (!is.data.frame(data))
+    stop("'data' must be a data.frame or sf object.", call. = FALSE)
   if (!id_col %in% names(data))
     stop("update(): '", id_col, "' column is required.", call. = FALSE)
 
@@ -60,13 +68,18 @@ update <- function(url, data, headers = list(), id_col = "id",
   if (valid < n) warning(sprintf("update(): %d rows with missing '%s' will be skipped",
                                  n - valid, id_col), call. = FALSE)
 
-  if (dry_run) { .show_dry_run("UPDATE", url, rows, valid); return(invisible(NULL)) }
+  if (dry_run) { .show_dry_run("UPDATE", url, rows, valid); return(invisible(TRUE)) }
 
-  for (i in seq_len(n)) {
-    rid <- rows[[i]][[id_col]]
-    if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid)))
-      .patch_one(.join_url(url, rid), rows[[i]], headers, style)
-    if (n > 1 && verbose) message(sprintf("Updating [%d/%d]", i, n))
+  patched <- 0L
+  for (chunk in .chunk_indices(n, chunk_size)) {
+    for (i in chunk) {
+      rid <- rows[[i]][[id_col]]
+      if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid))) {
+        .patch_one(.join_url(url, rid), rows[[i]], headers, style, timeout, max_tries)
+        patched <- patched + 1L
+      }
+    }
+    if (n > 1 && verbose) message(sprintf("Updating [%d/%d]", patched, valid))
   }
   if (n > 1 && verbose) message(sprintf("Updated %d records", valid))
   invisible(TRUE)
@@ -79,7 +92,10 @@ update <- function(url, data, headers = list(), id_col = "id",
 upsert <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
                    base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE)) {
+                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
+                   timeout = 60L, max_tries = 3L) {
+  if (!is.data.frame(data))
+    stop("'data' must be a data.frame or sf object.", call. = FALSE)
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
@@ -88,24 +104,26 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   rows     <- .as_row_list(data, id_col)
   n        <- length(rows)
 
-  if (dry_run) { .show_dry_run("UPSERT", url, rows, n); return(invisible(NULL)) }
+  if (dry_run) { .show_dry_run("UPSERT", url, rows, n); return(invisible(TRUE)) }
 
   created <- 0L; updated <- 0L
-  for (i in seq_len(n)) {
-    row <- rows[[i]]
-    rid <- row[[id_col]]
-    if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid))) {
-      if (.try_patch(.join_url(url, rid), row, headers, style)) {
-        updated <- updated + 1L
+  for (chunk in .chunk_indices(n, chunk_size)) {
+    for (i in chunk) {
+      row <- rows[[i]]
+      rid <- row[[id_col]]
+      if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid))) {
+        if (.patch_one(.join_url(url, rid), row, headers, style, timeout, max_tries)) {
+          updated <- updated + 1L
+        } else {
+          .post_one(url, row, headers, style, timeout, max_tries)
+          created <- created + 1L
+        }
       } else {
-        .post_one(url, row, headers, style)
+        .post_one(url, row, headers, style, timeout, max_tries)
         created <- created + 1L
       }
-    } else {
-      .post_one(url, row, headers, style)
-      created <- created + 1L
     }
-    if (n > 1 && verbose) message(sprintf("Upserting [%d/%d]", i, n))
+    if (n > 1 && verbose) message(sprintf("Upserting [%d/%d]", max(chunk), n))
   }
   if (n > 1 && verbose)
     message(sprintf("Upserted %d records (created: %d, updated: %d)", n, created, updated))
@@ -139,11 +157,14 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   Map(function(a, b) a:b, starts, pmin(n, starts + k - 1L))
 }
 
-.send_json <- function(method, url, body, headers) {
+.send_json <- function(method, url, body, headers, timeout, max_tries) {
   req <- httr2::request(url)
+  req <- httr2::req_timeout(req, timeout)
   req <- .add_headers(req, headers)
   req <- httr2::req_method(req, method)
   req <- httr2::req_body_json(req, data = body, auto_unbox = TRUE, digits = NA, null = "null")
+  req <- httr2::req_retry(req, max_tries = max_tries,
+                          is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
   req <- httr2::req_error(req, is_error = function(resp) FALSE)
   res <- httr2::req_perform(req)
   status <- httr2::resp_status(res)
@@ -158,9 +179,10 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   stop(sprintf("HTTP %d %s\n  %s", status, httr2::resp_status_desc(res), err_msg), call. = FALSE)
 }
 
-.post_one  <- function(url, row, headers, style) .send_json("POST",  url, .row_payload(row, style), headers)
-.patch_one <- function(url, row, headers, style) .send_json("PATCH", url, .row_payload(row, style), headers)
-.try_patch <- function(url, row, headers, style) tryCatch(.patch_one(url, row, headers, style), error = function(e) FALSE)
+.post_one  <- function(url, row, headers, style, timeout, max_tries)
+  .send_json("POST",  url, .row_payload(row, style), headers, timeout, max_tries)
+.patch_one <- function(url, row, headers, style, timeout, max_tries)
+  .send_json("PATCH", url, .row_payload(row, style), headers, timeout, max_tries)
 
 .row_payload <- function(row, style = "plain") {
   if (identical(style, "feature")) {
@@ -181,7 +203,16 @@ upsert <- function(url, data, headers = list(), id_col = "id",
   message(sprintf("DRY RUN: %s -- %s (%d records)", operation, url, n))
   for (i in seq_len(min(3L, n))) {
     message(sprintf("Record %d:", i))
-    message(jsonlite::toJSON(rows[[i]], auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null"))
+    if (requireNamespace("jsonlite", quietly = TRUE)) {
+      message(jsonlite::toJSON(rows[[i]], auto_unbox = TRUE, pretty = TRUE,
+                               digits = NA, null = "null"))
+    } else {
+      message(paste(
+        mapply(function(k, v) sprintf("  %s: %s", k, format(v)),
+               names(rows[[i]]), rows[[i]]),
+        collapse = "\n"
+      ))
+    }
   }
   if (n > 3L) message(sprintf("... and %d more", n - 3L))
   invisible(NULL)

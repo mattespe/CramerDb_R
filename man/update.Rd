@@ -14,7 +14,9 @@ update(
   base_url = "https://cramerdb.com/api/",
   dry_run = FALSE,
   staging = FALSE,
-  verbose = getOption("cramerdb_verbose", FALSE)
+  verbose = getOption("cramerdb_verbose", FALSE),
+  timeout = 60L,
+  max_tries = 3L
 )
 }
 \arguments{
@@ -37,8 +39,12 @@ update(
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
 
-\item{verbose}{Logical. Print per-row progress. Defaults to
+\item{verbose}{Logical. Print per-chunk progress. Defaults to
 \code{getOption("cramerdb_verbose", FALSE)}.}
+
+\item{timeout}{Integer. Request timeout in seconds. Default 60.}
+
+\item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
 }
 \value{
 Invisibly returns \code{TRUE}.

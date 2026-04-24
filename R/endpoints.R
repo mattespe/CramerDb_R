@@ -8,18 +8,21 @@
 #' @param base_url Character. Base API URL.
 #' @param headers Named list of additional HTTP headers.
 #' @param staging Logical. If TRUE, routes requests to the staging server.
+#' @param timeout Integer. Request timeout in seconds. Default 60.
+#' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns the parsed JSON response.
 #' @export
 endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/",
-                      headers = list(), staging = FALSE) {
+                      headers = list(), staging = FALSE,
+                      timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- if (is.null(path) || !nzchar(path)) base_url else .normalize_url(path, base_url)
   .check_url_trusted(url)
 
-  body <- .fetch_once(url, headers, labels = FALSE)
+  body <- .fetch_once(url, headers, labels = FALSE, timeout = timeout, max_tries = max_tries)
 
-  eps <- body[["endpoints"]] %||% body[!names(body) %in% c("authenticated", "user")]
+  eps <- body[["endpoints"]]
 
   if (length(eps) == 0) {
     message("No endpoints at ", url)
@@ -41,19 +44,26 @@ endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/",
 #' @param base_url Character. Base API URL.
 #' @param headers Named list of additional HTTP headers.
 #' @param staging Logical. If TRUE, routes requests to the staging server.
+#' @param timeout Integer. Request timeout in seconds. Default 60.
+#' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return A character vector of field names, or NULL on failure.
 #' @export
 fields <- function(path, base_url = "https://cramerdb.com/api/",
-                   headers = list(), staging = FALSE) {
-  headers  <- .auth_headers(headers)
-  base_url <- .resolve_base_url(base_url, staging)
-  url      <- .normalize_url(path, base_url)
+                   headers = list(), staging = FALSE,
+                   timeout = 60L, max_tries = 3L) {
+  user_headers <- headers
+  headers      <- .auth_headers(headers)
+  base_url     <- .resolve_base_url(base_url, staging)
+  url          <- .normalize_url(path, base_url)
   .check_url_trusted(url)
 
   nms <- tryCatch({
     req <- httr2::req_method(httr2::request(url), "OPTIONS")
+    req <- httr2::req_timeout(req, timeout)
     req <- httr2::req_headers(req, Accept = "application/json")
     req <- .add_headers(req, headers)
+    req <- httr2::req_retry(req, max_tries = max_tries,
+                            is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
     res <- httr2::req_perform(req)
     httr2::resp_check_status(res)
     acts <- httr2::resp_body_json(res, simplifyVector = FALSE)[["actions"]]
@@ -62,7 +72,8 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
   }, error = function(e) NULL)
 
   if (is.null(nms)) {
-    df  <- fetch(url, headers = headers, query = list(page_size = 1))
+    df  <- fetch(url, headers = user_headers, query = list(page_size = 1),
+                 timeout = timeout, max_tries = max_tries)
     nms <- if (nrow(df) > 0) names(df)
   }
 

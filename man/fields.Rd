@@ -8,7 +8,9 @@ fields(
   path,
   base_url = "https://cramerdb.com/api/",
   headers = list(),
-  staging = FALSE
+  staging = FALSE,
+  timeout = 60L,
+  max_tries = 3L
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ fields(
 \item{headers}{Named list of additional HTTP headers.}
 
 \item{staging}{Logical. If TRUE, routes requests to the staging server.}
+
+\item{timeout}{Integer. Request timeout in seconds. Default 60.}
+
+\item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
 }
 \value{
 A character vector of field names, or NULL on failure.
