@@ -25,24 +25,39 @@ set_token = function(token)
   )
 }
 
-#' Get the currently configured CramerDB API token
+#' Get the currently configured CramerDB API token (disabled)
 #'
-#' Retrieves the token from (in order of priority):
-#' 1. R options (`getOption("cramerdb.token")`)
-#' 2. `CRAMERDB_TOKEN` environment variable
+#' `get_token()` is disabled and always errors. Returning the token lets
+#' it be printed to the console, where it can end up in `.Rhistory` or a
+#' session log — the same leak vector that got `set_token()` disabled.
 #'
-#' @param error_if_missing Logical. If TRUE, error when no token is found.
-#' @return The token string, or NULL if not set (and `error_if_missing = FALSE`).
-#' @examples
-#' \dontrun{
-#' get_token()
-#' }
+#' Use `whoami()` to verify a token is configured and accepted by the
+#' server without exposing it. If you need to inspect the raw value
+#' yourself, read `getOption("cramerdb.token")` or
+#' `Sys.getenv("CRAMERDB_TOKEN")` directly. The function is kept (rather
+#' than removed) so existing calls fail with a clear message instead of
+#' "could not find function".
+#'
+#' @param error_if_missing Unused; kept for backwards-compatible call signatures.
 #' @export
-get_token <- function(error_if_missing = FALSE) {
-  token <- getOption("cramerdb.token", default = "")
+get_token = function(error_if_missing = FALSE)
+{
+  stop(
+    "get_token() is disabled: it can leave your token in plain text in .Rhistory or a console log.\n",
+    "Use whoami() to verify your token is configured and accepted, or read\n",
+    "getOption('cramerdb.token') / Sys.getenv('CRAMERDB_TOKEN') directly if you must see it.",
+    call. = FALSE
+  )
+}
+
+# Token lookup for .auth_headers(); not exported since get_token() is
+# disabled (returning the token risks it leaking to the console).
+.get_token = function(error_if_missing = FALSE)
+{
+  token = getOption("cramerdb.token", default = "")
 
   if (!nzchar(token)) {
-    token <- Sys.getenv("CRAMERDB_TOKEN", "")
+    token = Sys.getenv("CRAMERDB_TOKEN", "")
   }
 
   if (!nzchar(token)) {
@@ -82,7 +97,7 @@ clear_token <- function() {
     return(headers)
   }
 
-  token <- get_token(error_if_missing = FALSE)
+  token <- .get_token(error_if_missing = FALSE)
   if (is.null(token)) {
     return(headers)
   }

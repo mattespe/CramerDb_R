@@ -2,25 +2,23 @@
 % Please edit documentation in R/auth.R
 \name{get_token}
 \alias{get_token}
-\title{Get the currently configured CramerDB API token}
+\title{Get the currently configured CramerDB API token (disabled)}
 \usage{
 get_token(error_if_missing = FALSE)
 }
 \arguments{
-\item{error_if_missing}{Logical. If TRUE, error when no token is found.}
-}
-\value{
-The token string, or NULL if not set (and \code{error_if_missing = FALSE}).
+\item{error_if_missing}{Unused; kept for backwards-compatible call signatures.}
 }
 \description{
-Retrieves the token from (in order of priority):
-\enumerate{
-\item R options (\code{getOption("cramerdb.token")})
-\item \code{CRAMERDB_TOKEN} environment variable
+\code{get_token()} is disabled and always errors. Returning the token lets
+it be printed to the console, where it can end up in \code{.Rhistory} or a
+session log — the same leak vector that got \code{set_token()} disabled.
 }
-}
-\examples{
-\dontrun{
-get_token()
-}
+\details{
+Use \code{whoami()} to verify a token is configured and accepted by the
+server without exposing it. If you need to inspect the raw value
+yourself, read \code{getOption("cramerdb.token")} or
+\code{Sys.getenv("CRAMERDB_TOKEN")} directly. The function is kept (rather
+than removed) so existing calls fail with a clear message instead of
+"could not find function".
 }

@@ -77,4 +77,20 @@ cramerDBlite:::.check_url_trusted("https://httpbin.org/")
 cramerDBlite:::.check_url_trusted("https://cramerdb.com/api/")
 options(old_opts)
 
+# --- get_token / .get_token / .auth_headers -----------------------------------
+stopifnot(
+  inherits(tryCatch(get_token(), error = identity), "error")
+)
+
+old_opts <- options(cramerdb.token = NULL)
+Sys.unsetenv("CRAMERDB_TOKEN")
+stopifnot(is.null(cramerDBlite:::.get_token()))
+
+options(cramerdb.token = "test-token-123")
+stopifnot(
+  identical(cramerDBlite:::.get_token(), "test-token-123"),
+  identical(cramerDBlite:::.auth_headers()$Authorization, "Token test-token-123")
+)
+options(old_opts)
+
 message("All unit tests passed.")

@@ -8,7 +8,7 @@
 library(cramerDBlite)
 
 # --- auth ---------------------------------------------------------------------
-tok <- get_token()
+tok <- cramerDBlite:::.get_token()
 stopifnot(is.character(tok), nzchar(tok))
 whoami()
 

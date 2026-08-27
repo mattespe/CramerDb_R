@@ -84,13 +84,17 @@ whoami()
 
 ### Retrieve Your Token
 
-To see your current token (for debugging):
+`get_token()` is disabled and stops with an error if you call it.
+Returning the token lets it be printed to the console, which risks the
+same `.Rhistory`/log leak as `set_token()`.
+
+To confirm a token is configured and accepted, use `whoami()` (see
+Connection Testing above). If you need the raw value, read it directly:
 
 ```r
-get_token()
-# [1] "YOUR-API-TOKEN"
+getOption("cramerdb.token")
+Sys.getenv("CRAMERDB_TOKEN")
 ```
-See above notes regarding token security.
 
 ---
 
@@ -410,7 +414,7 @@ updated_events <- fetch("seine/event/")
 | Function | Description |
 |----------|-------------|
 | `set_token(token)` | Disabled; errors with setup instructions |
-| `get_token()` | Retrieve current token |
+| `get_token()` | Disabled; errors with setup instructions |
 | `clear_token()` | Remove token from current session |
 | `whoami()` | Check authentication status |
 
