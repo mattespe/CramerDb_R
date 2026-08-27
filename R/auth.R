@@ -1,42 +1,28 @@
 # R/auth.R
 
-#' Set the CramerDB API token for this R session
+#' Set the CramerDB API token for this R session (disabled)
 #'
-#' Stores the token in R options for the current session. In interactive
-#' sessions you will be prompted to confirm, since the token will appear in
-#' plain text in `.Rhistory`. For persistent storage across sessions, set the
-#' option in your `~/.Rprofile` or use the `CRAMERDB_TOKEN` environment
-#' variable in `~/.Renviron` instead.
+#' `set_token()` is disabled and always errors. Calling it with a token
+#' value risks that value being written to `.Rhistory` in plain text.
+#' That is how a token was previously leaked.
 #'
-#' @param token Character scalar token value (no "Token " prefix needed).
-#' @examples
-#' \dontrun{
-#' # Session-only (prompts for confirmation in interactive use)
-#' set_token("abcd1234...")
+#' Set your token with `options(cramerdb.token = ...)` in `~/.Rprofile`
+#' instead, or with the `CRAMERDB_TOKEN` environment variable in
+#' `~/.Renviron`. See the Authentication section of `README.md` for
+#' details. The function is kept (rather than removed) so existing calls
+#' fail with a clear message instead of "could not find function".
 #'
-#' # Preferred: add to ~/.Rprofile for persistence without exposing in .Rhistory
-#' # options(cramerdb.token = "abcd1234...")
-#' }
+#' @param token Unused; kept for backwards-compatible call signatures.
 #' @export
-set_token <- function(token) {
-  if (!is.character(token) || length(token) != 1L || !nzchar(token)) {
-    stop("set_token(): `token` must be a non-empty character scalar.", call. = FALSE)
-  }
-
-  if (interactive()) {
-    warning("Your token will be visible in this session and may be saved in .Rhistory.",
-            "\nDelete .Rhistory and do not share it.",
-            "\nPreferred alternative: set options(cramerdb.token = ...) in ~/.Rprofile",
-            call. = FALSE, immediate. = TRUE)
-    answer <- readline("Set token anyway? [y/N] ")
-    if (!tolower(trimws(answer)) %in% c("y", "yes")) {
-      message("Token not set.")
-      return(invisible(NULL))
-    }
-  }
-
-  options(cramerdb.token = token)
-  invisible(token)
+set_token = function(token)
+{
+  stop(
+    "set_token() is disabled: it can leave your token in plain text in .Rhistory.\n",
+    "Set your token with options(cramerdb.token = '...') in ~/.Rprofile, or\n",
+    "the CRAMERDB_TOKEN environment variable in ~/.Renviron.\n",
+    "See the Authentication section of README.md for details.",
+    call. = FALSE
+  )
 }
 
 #' Get the currently configured CramerDB API token

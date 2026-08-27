@@ -7,8 +7,6 @@
 
 library(cramerDBlite)
 
-# set_token("your_token_here")   # uncomment if token not already stored
-
 # --- auth ---------------------------------------------------------------------
 tok <- get_token()
 stopifnot(is.character(tok), nzchar(tok))

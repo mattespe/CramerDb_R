@@ -29,7 +29,7 @@ There is also an integration script at `inst/scripts/test_integration.R` that re
 
 ### File layout
 
-- `R/auth.R` — token storage/retrieval: `set_token`, `get_token`, `clear_token`. Token lookup priority: R options (`cramerdb.token`) → `CRAMERDB_TOKEN` env var.
+- `R/auth.R` — token storage/retrieval: `set_token` (disabled, always errors), `get_token`, `clear_token`. Token lookup priority: R options (`cramerdb.token`) → `CRAMERDB_TOKEN` env var.
 - `R/fetch.R` — `fetch()`, `whoami()`, and their pagination/normalization pipeline.
 - `R/crud.R` — `create()`, `update()`, `upsert()`, and their HTTP helpers.
 - `R/endpoints.R` — `endpoints()` and `fields()` for API discovery.

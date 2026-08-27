@@ -23,29 +23,10 @@ pak::pak("mattespe/CramerDb_R@lite")
 library(cramerDBlite)
 ```
 
-### Persistent Token Storage
-
-To avoid calling `set_token()` each session, add the option to your `~/.Rprofile`:
-
-```r
-options(cramerdb.token = "your_api_token")
-```
-
-Alternatively, set the `CRAMERDB_TOKEN` environment variable in your `~/.Renviron`:
-
-```
-CRAMERDB_TOKEN=your_api_token
-```
-
-Keep these files private and do not share or commit them — they contain your API token in plain text.
-
 ## Quick Start
 
 ```r
-# 1. Set your authentication token
-# Preferred: set token as an option in your .Rprofile or as an environmental variable
-# This function exposes you token as plan text on the console and in your .Rhistory file!!!
-#set_token("your_api_token_here")
+# 1. Set your authentication token (see Authentication section)
 
 # 2. Explore available endpoints
 endpoints()
@@ -70,35 +51,28 @@ upsert("seine/event/", new_or_updated_events)
 
 ### Set Your Token
 
-Get your API token from the CramerDB web interface (https://cramerdb.com/admin/user/). 
+Get your API token from the CramerDB web interface (https://cramerdb.com/admin/user/).
 
-The token may be set for the session:
+`set_token()` is disabled and stops with an error if you call it. It used to print the token to the console and record it in `.Rhistory`, which is often saved or shared accidentally.
 
-```r
-set_token("YOUR-API-TOKEN")
-```
+Store the token outside your session history using one of these methods instead:
 
-However, this exposes the API token as plain text on the console, as well as stores its value in the .Rhistory file (default in RStudio). As the .Rhistory file is often saved and shared accidently, this method is heavily discouraged.
-
-Instead, we recommend storing the key in your `~/.Rprofile` by opening `~/.Rprofile` in a text editor, add this line, save and exit:
-
+**Option 1 — R option in `~/.Rprofile`:**
 ```r
 options(cramerdb.token = "your-api-token")
 ```
 
-Alternatively, you can save the API key as an environmental variable in your `~/.Renviron`:
-
+**Option 2 — Environment variable in `~/.Renviron`:**
 ```
-CRAMERDB_TOKEN = "your-api-token"
+CRAMERDB_TOKEN=your-api-token
 ```
 
-This avoids the API token being printed to the console unless it is explicitly printed.
-
-Users are encouraged to set the file permissions on either file to allow only the user to read via:
-
+Either file should be readable only by you:
 ```r
 Sys.chmod("~/.Rprofile", mode = "0400")
 ```
+
+Keep these files private — do not share or commit them.
 
 ### Connection Testing
 
@@ -435,7 +409,7 @@ updated_events <- fetch("seine/event/")
 
 | Function | Description |
 |----------|-------------|
-| `set_token(token)` | Set token for session |
+| `set_token(token)` | Disabled; errors with setup instructions |
 | `get_token()` | Retrieve current token |
 | `clear_token()` | Remove token from current session |
 | `whoami()` | Check authentication status |
@@ -455,7 +429,7 @@ updated_events <- fetch("seine/event/")
 ### "Unexpected content type text/html"
 
 This error occurs when not authenticated. Make sure to:
-1. Set your token 
+1. Set your token (see the Authentication section)
 2. Verify authentication: `whoami()`
 
 ### "Failed to parse URL: Bad scheme"
@@ -469,5 +443,38 @@ library(cramerDBlite)  # after restarting R
 
 ### "HTTP 401 Unauthorized"
 
-Your token may be invalid or expired. Get a new token from the CramerDB web interface and set it again:
+Your token may be invalid or expired. Get a new token from the CramerDB web interface (see the Authentication section for how to store it).
 
+---
+
+## LLM Policy
+
+This project is developed with assistance from AI coding agents,
+including Claude Code. Agent-assisted contributions are accepted subject
+to the following. A change not meeting these requirements will not be
+merged.
+
+1. Style and idioms MUST match the project's existing code. This
+   includes avoiding new dependency debt and favoring ease of
+   maintenance over cleverness.
+2. New functionality MUST be tested using the existing test suite's
+   conventions.
+3. New functionality or any change in behavior MUST be documented
+   following the project's existing documentation style.
+4. Changes MUST be intentional and motivated by a real defect or a
+   required piece of functionality — not spontaneous refactors,
+   speculative features, or unrequested abstractions. Where the project
+   exposes a stable interface (e.g. an R package's exported functions),
+   existing behavior MUST NOT break unless it can be demonstrated to be
+   erroneous.
+5. Every commit containing agent-assisted work MUST carry an
+   `Assisted-by:` trailer naming the agent, model version, and any
+   additional tooling used, e.g. `Assisted-by: Claude:Sonnet-5
+   Claude-Code`. Basic development tools (git, gcc, make, editors)
+   should not be listed.
+6. All agent-assisted contributions MUST be reviewed and signed off by a
+   human before inclusion. The human reviewer is ultimately responsible
+   for any resulting errors or bugs.
+
+Agents should read the project's `CLAUDE.md`, where present, since it is
+curated to inform the points above with project-specific detail.

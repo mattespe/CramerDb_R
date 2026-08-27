@@ -2,26 +2,22 @@
 % Please edit documentation in R/auth.R
 \name{set_token}
 \alias{set_token}
-\title{Set the CramerDB API token for this R session}
+\title{Set the CramerDB API token for this R session (disabled)}
 \usage{
 set_token(token)
 }
 \arguments{
-\item{token}{Character scalar token value (no "Token " prefix needed).}
+\item{token}{Unused; kept for backwards-compatible call signatures.}
 }
 \description{
-Stores the token in R options for the current session. In interactive
-sessions you will be prompted to confirm, since the token will appear in
-plain text in \code{.Rhistory}. For persistent storage across sessions, set the
-option in your \verb{~/.Rprofile} or use the \code{CRAMERDB_TOKEN} environment
-variable in \verb{~/.Renviron} instead.
+\code{set_token()} is disabled and always errors. Calling it with a token
+value risks that value being written to \code{.Rhistory} in plain text.
+That is how a token was previously leaked.
 }
-\examples{
-\dontrun{
-# Session-only (prompts for confirmation in interactive use)
-set_token("abcd1234...")
-
-# Preferred: add to ~/.Rprofile for persistence without exposing in .Rhistory
-# options(cramerdb.token = "abcd1234...")
-}
+\details{
+Set your token with \code{options(cramerdb.token = ...)} in \verb{~/.Rprofile}
+instead, or with the \code{CRAMERDB_TOKEN} environment variable in
+\verb{~/.Renviron}. See the Authentication section of \code{README.md} for
+details. The function is kept (rather than removed) so existing calls
+fail with a clear message instead of "could not find function".
 }
