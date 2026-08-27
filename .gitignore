@@ -5,3 +5,8 @@
 .Renviron
 *.tar.gz
 *.Rcheck/
+.env
+*.pem
+*.key
+*.p12
+credentials*
