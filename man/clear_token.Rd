@@ -2,15 +2,23 @@
 % Please edit documentation in R/auth.R
 \name{clear_token}
 \alias{clear_token}
-\title{Clear stored CramerDB API token}
+\title{Clear the CramerDB API token from this R session}
 \usage{
 clear_token()
 }
 \value{
-Invisibly returns TRUE
+Invisibly returns TRUE.
 }
 \description{
-Removes the token from the current R session options.
+Clears both places a token is read from: the \code{cramerdb.token} option and
+the \code{CRAMERDB_TOKEN} environment variable. After this call the package
+cannot authenticate until a token is configured again.
+}
+\details{
+The effect lasts for the current session only. A token set in
+\verb{~/.Rprofile} or \verb{~/.Renviron} is read again the next time R starts.
+To revoke access for good, delete the token in the CramerDB web
+interface.
 }
 \examples{
 \dontrun{

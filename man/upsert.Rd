@@ -16,7 +16,8 @@ upsert(
   staging = FALSE,
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,
-  max_tries = 3L
+  max_tries = 3L,
+  on_missing = c("create", "error")
 )
 }
 \arguments{
@@ -45,10 +46,18 @@ upsert(
 \item{timeout}{Integer. Request timeout in seconds. Default 60.}
 
 \item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
+
+\item{on_missing}{\code{"create"} (default) or \code{"error"}; what to do when an id
+returns 404.}
 }
 \value{
 Invisibly returns \code{TRUE}.
 }
 \description{
-Upsert records via API (PATCH if id exists; POST otherwise)
+A record whose id is not found is created instead. The API answers "no
+such record" and "that record is not yours to see" with the same 404
+status. A record you lack permission on therefore looks identical to one
+that does not exist, and creating it duplicates the original instead of
+updating it. Rows that hit this case are reported in a warning. Set
+\code{on_missing = "error"} to stop on them instead.
 }

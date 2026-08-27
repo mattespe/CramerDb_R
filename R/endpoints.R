@@ -31,7 +31,7 @@ endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/",
 
   nms <- sort(names(eps))
   message("Endpoints at ", url)
-  for (nm in nms) message(sprintf("  %-20s  %s", nm, eps[[nm]]))
+  for (nm in nms) message(sprintf("  %-20s  %s", .sanitize(nm), .sanitize(eps[[nm]])))
   invisible(body)
 }
 
@@ -60,16 +60,22 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
   nms <- tryCatch({
     req <- httr2::req_method(httr2::request(url), "OPTIONS")
     req <- httr2::req_timeout(req, timeout)
+    req <- httr2::req_options(req, followlocation = 0L)
     req <- httr2::req_headers(req, Accept = "application/json")
     req <- .add_headers(req, headers)
     req <- httr2::req_retry(req, max_tries = max_tries,
                             is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
     res <- httr2::req_perform(req)
+    .check_no_redirect(res)
     httr2::resp_check_status(res)
     acts <- httr2::resp_body_json(res, simplifyVector = FALSE)[["actions"]]
     fi   <- acts[["POST"]] %||% acts[["PUT"]] %||% acts[["PATCH"]] %||% acts[[1]]
     if (length(fi)) names(fi)
-  }, error = function(e) NULL)
+  }, error = function(e) {
+    # An endpoint that does not answer OPTIONS is normal; a rejected token is not.
+    if (inherits(e, c("httr2_http_401", "httr2_http_403"))) stop(e)
+    NULL
+  })
 
   if (is.null(nms)) {
     df  <- fetch(url, headers = user_headers, query = list(page_size = 1),
@@ -79,7 +85,7 @@ fields <- function(path, base_url = "https://cramerdb.com/api/",
 
   if (!is.null(nms)) {
     message("Fields at ", url)
-    for (nm in nms) message("  ", nm)
+    for (nm in nms) message("  ", .sanitize(nm))
   } else {
     message("No fields found at ", url)
   }

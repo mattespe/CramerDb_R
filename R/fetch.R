@@ -12,12 +12,13 @@
 #'   `getOption("cramerdb_verbose", FALSE)`.
 #' @param timeout Integer. Request timeout in seconds. Default 60.
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
+#' @param max_pages Integer. Maximum pages to follow. Default 1000.
 #' @return A `data.frame`.
 #' @export
 fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
                   staging = FALSE, query = list(),
                   verbose = getOption("cramerdb_verbose", FALSE),
-                  timeout = 60L, max_tries = 3L) {
+                  timeout = 60L, max_tries = 3L, max_pages = 1000L) {
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
@@ -29,7 +30,8 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
   }
 
   .normalize_pages_to_df(.fetch_pages(url, headers, verbose = verbose,
-                                      timeout = timeout, max_tries = max_tries))
+                                      timeout = timeout, max_tries = max_tries,
+                                      max_pages = max_pages))
 }
 
 #' Check who is authenticated
@@ -47,7 +49,7 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
   url      <- .normalize_url("", base_url)
   .check_url_trusted(url)
   res      <- .fetch_once(url, headers, labels = FALSE, timeout = timeout, max_tries = max_tries)
-  message("Logged in as: ", res[["user"]])
+  message("Logged in as: ", .sanitize(res[["user"]]))
   invisible(res)
 }
 
@@ -64,6 +66,7 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
 .fetch_once <- function(url, headers = list(), labels = TRUE, timeout, max_tries) {
   req <- httr2::request(url)
   req <- httr2::req_timeout(req, timeout)
+  req <- httr2::req_options(req, followlocation = 0L)
   req <- httr2::req_headers(req, Accept = "application/json")
   req <- .add_headers(req, headers)
   if (isTRUE(labels) && !.has_query_param(url, "labels"))
@@ -71,17 +74,19 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
   req <- httr2::req_retry(req, max_tries = max_tries,
                           is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
   res <- httr2::req_perform(req)
+  .check_no_redirect(res)
   httr2::resp_check_status(res)
   httr2::resp_body_json(res, simplifyVector = FALSE)
 }
 
 .fetch_pages <- function(url, headers = list(), labels = TRUE, verbose = FALSE,
-                         timeout, max_tries) {
+                         timeout, max_tries, max_pages = 1000L) {
   body <- .fetch_once(url, headers, labels = labels, timeout = timeout, max_tries = max_tries)
 
   if (!is.list(body) || is.null(body[["results"]])) return(list(body))
 
   pages      <- list(body)
+  seen <- url
   nxt        <- body[["next"]]
   page_num   <- 2L
   total_count <- body[["count"]]
@@ -97,12 +102,21 @@ whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
   }
 
   while (!is.null(nxt) && is.character(nxt) && nzchar(nxt)) {
+    .check_url_trusted(nxt)  # server-supplied link, and it carries the token
+    if (nxt %in% seen)
+      stop("Pagination loop: server returned a 'next' link already fetched.", call. = FALSE)
+    if (length(pages) >= max_pages) {
+      warning(sprintf("Stopped at max_pages = %d; more results remain.", max_pages),
+              call. = FALSE)
+      break
+    }
     if (verbose) {
       if (!is.na(total_pages))
         message(sprintf("Page [%d/%d]", page_num, total_pages))
       else
         message(sprintf("Fetching page %d...", page_num))
     }
+    seen <- c(seen, nxt)
     pg     <- .fetch_once(nxt, headers, labels = labels, timeout = timeout, max_tries = max_tries)
     pages  <- c(pages, list(pg))
     nxt    <- pg[["next"]]

@@ -75,19 +75,35 @@ get_token = function(error_if_missing = FALSE)
   token
 }
 
-#' Clear stored CramerDB API token
+#' Clear the CramerDB API token from this R session
 #'
-#' Removes the token from the current R session options.
+#' Clears both places a token is read from: the `cramerdb.token` option and
+#' the `CRAMERDB_TOKEN` environment variable. After this call the package
+#' cannot authenticate until a token is configured again.
 #'
-#' @return Invisibly returns TRUE
+#' The effect lasts for the current session only. A token set in
+#' `~/.Rprofile` or `~/.Renviron` is read again the next time R starts.
+#' To revoke access for good, delete the token in the CramerDB web
+#' interface.
+#'
+#' @return Invisibly returns TRUE.
 #' @export
 #' @examples
 #' \dontrun{
 #' clear_token()
 #' }
-clear_token <- function() {
+clear_token = function()
+{
+  cleared = c(
+    if (nzchar(getOption("cramerdb.token", default = ""))) "cramerdb.token option",
+    if (nzchar(Sys.getenv("CRAMERDB_TOKEN", ""))) "CRAMERDB_TOKEN environment variable"
+  )
   options(cramerdb.token = NULL)
-  message("Token cleared from current session")
+  Sys.unsetenv("CRAMERDB_TOKEN")
+  if (length(cleared))
+    message("Token cleared from: ", paste(cleared, collapse = ", "))
+  else
+    message("No token was configured.")
   invisible(TRUE)
 }
 

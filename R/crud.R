@@ -86,16 +86,28 @@ update <- function(url, data, headers = list(), id_col = "id",
 }
 
 #' Upsert records via API (PATCH if id exists; POST otherwise)
+#'
+#' A record whose id is not found is created instead. The API answers "no
+#' such record" and "that record is not yours to see" with the same 404
+#' status. A record you lack permission on therefore looks identical to one
+#' that does not exist, and creating it duplicates the original instead of
+#' updating it. Rows that hit this case are reported in a warning. Set
+#' `on_missing = "error"` to stop on them instead.
+#'
 #' @inheritParams create
+#' @param on_missing `"create"` (default) or `"error"`; what to do when an id
+#'   returns 404.
 #' @return Invisibly returns `TRUE`.
 #' @export
 upsert <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
                    base_url = "https://cramerdb.com/api/", dry_run = FALSE,
                    staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
-                   timeout = 60L, max_tries = 3L) {
+                   timeout = 60L, max_tries = 3L,
+                   on_missing = c("create", "error")) {
   if (!is.data.frame(data))
     stop("'data' must be a data.frame or sf object.", call. = FALSE)
+  on_missing <- match.arg(on_missing)
   headers  <- .auth_headers(headers)
   base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
@@ -106,7 +118,7 @@ upsert <- function(url, data, headers = list(), id_col = "id",
 
   if (dry_run) { .show_dry_run("UPSERT", url, rows, n); return(invisible(TRUE)) }
 
-  created <- 0L; updated <- 0L
+  created <- 0L; updated <- 0L; missing <- character(0)
   for (chunk in .chunk_indices(n, chunk_size)) {
     for (i in chunk) {
       row <- rows[[i]]
@@ -115,6 +127,10 @@ upsert <- function(url, data, headers = list(), id_col = "id",
         if (.patch_one(.join_url(url, rid), row, headers, style, timeout, max_tries)) {
           updated <- updated + 1L
         } else {
+          if (identical(on_missing, "error"))
+            stop(sprintf("upsert(): %s '%s' returned 404; it is missing or not visible to your account.",
+                         id_col, as.character(rid)), call. = FALSE)
+          missing <- c(missing, as.character(rid))
           .post_one(url, row, headers, style, timeout, max_tries)
           created <- created + 1L
         }
@@ -124,6 +140,14 @@ upsert <- function(url, data, headers = list(), id_col = "id",
       }
     }
     if (n > 1 && verbose) message(sprintf("Upserting [%d/%d]", max(chunk), n))
+  }
+  if (length(missing)) {
+    shown <- missing[seq_len(min(5L, length(missing)))]
+    warning(sprintf(
+      paste0("upsert(): %d row(s) supplied a '%s' that returned 404 and were created as new records (%s).\n",
+             "  A 404 also means the record exists but is not visible to your account, in which case this duplicated it.\n",
+             "  Use on_missing = \"error\" to stop on these instead."),
+      length(missing), id_col, paste(shown, collapse = ", ")), call. = FALSE)
   }
   if (n > 1 && verbose)
     message(sprintf("Upserted %d records (created: %d, updated: %d)", n, created, updated))
@@ -160,6 +184,7 @@ upsert <- function(url, data, headers = list(), id_col = "id",
 .send_json <- function(method, url, body, headers, timeout, max_tries) {
   req <- httr2::request(url)
   req <- httr2::req_timeout(req, timeout)
+  req <- httr2::req_options(req, followlocation = 0L)
   req <- .add_headers(req, headers)
   req <- httr2::req_method(req, method)
   req <- httr2::req_body_json(req, data = body, auto_unbox = TRUE, digits = NA, null = "null")
@@ -167,6 +192,7 @@ upsert <- function(url, data, headers = list(), id_col = "id",
                           is_transient = \(r) httr2::resp_status(r) %in% c(429L, 503L))
   req <- httr2::req_error(req, is_error = function(resp) FALSE)
   res <- httr2::req_perform(req)
+  .check_no_redirect(res)
   status <- httr2::resp_status(res)
   if (status >= 200L && status < 300L) return(TRUE)
   if (status == 404L) return(FALSE)
@@ -176,7 +202,8 @@ upsert <- function(url, data, headers = list(), id_col = "id",
     paste(names(err_body), unlist(err_body), sep = ": ", collapse = "\n  ")
   else
     as.character(err_body)
-  stop(sprintf("HTTP %d %s\n  %s", status, httr2::resp_status_desc(res), err_msg), call. = FALSE)
+  stop(sprintf("HTTP %d %s\n  %s", status, httr2::resp_status_desc(res),
+               .sanitize(err_msg)), call. = FALSE)
 }
 
 .post_one  <- function(url, row, headers, style, timeout, max_tries)

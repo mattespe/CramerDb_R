@@ -8,9 +8,7 @@
 library(cramerDBlite)
 
 # --- auth ---------------------------------------------------------------------
-tok <- cramerDBlite:::.get_token()
-stopifnot(is.character(tok), nzchar(tok))
-whoami()
+whoami()  # checks the token without binding it into the workspace
 
 # --- endpoints  ---------------------------------------------------------------
 endpoints()

@@ -12,7 +12,8 @@ fetch(
   query = list(),
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,
-  max_tries = 3L
+  max_tries = 3L,
+  max_pages = 1000L
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ fetch(
 \item{timeout}{Integer. Request timeout in seconds. Default 60.}
 
 \item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
+
+\item{max_pages}{Integer. Maximum pages to follow. Default 1000.}
 }
 \value{
 A \code{data.frame}.

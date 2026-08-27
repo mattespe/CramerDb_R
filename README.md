@@ -251,6 +251,17 @@ mixed_events <- data.frame(
 upsert("seine/event/", mixed_events)
 ```
 
+One caution applies when you supply an `id`. The API answers "no such
+record" and "that record is not yours to see" with the same response. A
+record you lack permission on therefore looks exactly like a record that
+does not exist. The `upsert()` function creates it, which duplicates the
+original instead of updating it. It warns whenever this happens and lists
+the ids involved. To stop on them instead:
+
+```r
+upsert("seine/event/", mixed_events, on_missing = "error")
+```
+
 ### Spatial Data (GeoJSON)
 
 For endpoints that accept GeoJSON, pass an `sf` object and it will automatically format as GeoJSON Features:
@@ -319,11 +330,24 @@ fetch("seine/event/", base_url = "https://staging.cramerdb.com/api/")
 create("seine/event/", data, base_url = "https://staging.cramerdb.com/api/")
 ```
 
-Note, URLs are checked against accepted Hosts (base URLs) to avoid accidently sending the API key to non-Cramer host. Additional hosts can be added via:
+Every request is checked before the token is attached, so a stray URL cannot
+carry your API key to somebody else's server. Two things must hold. First,
+the address must use `https`. Second, its host must be on the allowed list,
+which starts out holding `cramerdb.com` and `staging.cramerdb.com`.
+
+The check covers the address you pass in. It also covers every page of a
+paginated result, including the follow-on links the server itself supplies.
+Redirects are not followed at all, since the destination cannot be checked
+before the request goes out.
+
+To reach another CramerDB deployment, add its hostname:
 
 ```r
-options(cramerdb.allowed_hosts = "custom-url")
+options(cramerdb.allowed_hosts = "cramerdb.example.org")
 ```
+
+Give a bare hostname here, not a full URL. Add only hosts you trust. The
+package will send your token to anything on this list.
 
 ### Custom ID Column
 
@@ -415,7 +439,7 @@ updated_events <- fetch("seine/event/")
 |----------|-------------|
 | `set_token(token)` | Disabled; errors with setup instructions |
 | `get_token()` | Disabled; errors with setup instructions |
-| `clear_token()` | Remove token from current session |
+| `clear_token()` | Remove token from current session (option and env var) |
 | `whoami()` | Check authentication status |
 
 ### Discovery & Navigation
