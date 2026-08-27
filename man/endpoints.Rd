@@ -6,9 +6,8 @@
 \usage{
 endpoints(
   path = NULL,
-  base_url = "https://cramerdb.com/api/",
+  base_url = "https://api.cramerdb.com/rest/",
   headers = list(),
-  staging = FALSE,
   timeout = 60L,
   max_tries = 3L
 )
@@ -20,8 +19,6 @@ If NULL, lists root endpoints.}
 \item{base_url}{Character. Base API URL.}
 
 \item{headers}{Named list of additional HTTP headers.}
-
-\item{staging}{Logical. If TRUE, routes requests to the staging server.}
 
 \item{timeout}{Integer. Request timeout in seconds. Default 60.}
 

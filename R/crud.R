@@ -8,22 +8,25 @@
 #' @param chunk_size Controls progress message grouping (each row is still one request).
 #' @param base_url Character. Base API URL.
 #' @param dry_run Logical. Preview what would be sent without sending.
-#' @param staging Logical. If TRUE, routes requests to the staging server.
 #' @param verbose Logical. Print per-chunk progress. Defaults to
 #'   `getOption("cramerdb_verbose", FALSE)`.
 #' @param timeout Integer. Request timeout in seconds. Default 60.
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
-#' @return Invisibly returns `TRUE`.
+#' @param on_error `"stop"` (default) or `"continue"`; whether a row the server
+#'   rejects aborts the batch or is skipped and reported in a warning.
+#' @return Invisibly returns `TRUE`, or `FALSE` when `on_error = "continue"`
+#'   and some rows failed.
 #' @export
 create <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
-                   timeout = 60L, max_tries = 3L) {
+                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   verbose = getOption("cramerdb_verbose", FALSE),
+                   timeout = 60L, max_tries = 3L,
+                   on_error = c("stop", "continue")) {
   if (!is.data.frame(data))
     stop("'data' must be a data.frame or sf object.", call. = FALSE)
+  on_error = match.arg(on_error)
   headers  <- .auth_headers(headers)
-  base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
   .check_url_trusted(url)
   style    <- .pick_style(match.arg(style), data)
@@ -32,30 +35,37 @@ create <- function(url, data, headers = list(), id_col = "id",
 
   if (dry_run) { .show_dry_run("CREATE", url, rows, n); return(invisible(TRUE)) }
 
+  failures = list()
   for (chunk in .chunk_indices(n, chunk_size)) {
-    for (i in chunk) .post_one(url, rows[[i]], headers, style, timeout, max_tries)
+    for (i in chunk) {
+      res = .attempt(.post_one(url, rows[[i]], headers, style, timeout, max_tries), on_error)
+      if (!res$ok) failures[[as.character(i)]] = res$message
+    }
     if (n > 1 && verbose) message(sprintf("Creating [%d/%d]", max(chunk), n))
   }
-  if (n > 1 && verbose) message(sprintf("Created %d records", n))
-  invisible(TRUE)
+  if (n > 1 && verbose) message(sprintf("Created %d records", n - length(failures)))
+  .report_failures("create", n, failures)
+  invisible(length(failures) == 0L)
 }
 
 #' Update existing records via API (PATCH by id)
 #' @inheritParams create
-#' @return Invisibly returns `TRUE`.
+#' @return Invisibly returns `TRUE`, or `FALSE` when `on_error = "continue"`
+#'   and some rows failed.
 #' @export
 update <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
-                   timeout = 60L, max_tries = 3L) {
+                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   verbose = getOption("cramerdb_verbose", FALSE),
+                   timeout = 60L, max_tries = 3L,
+                   on_error = c("stop", "continue")) {
   if (!is.data.frame(data))
     stop("'data' must be a data.frame or sf object.", call. = FALSE)
   if (!id_col %in% names(data))
     stop("update(): '", id_col, "' column is required.", call. = FALSE)
 
+  on_error = match.arg(on_error)
   headers  <- .auth_headers(headers)
-  base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
   .check_url_trusted(url)
   style    <- .pick_style(match.arg(style), data)
@@ -70,19 +80,22 @@ update <- function(url, data, headers = list(), id_col = "id",
 
   if (dry_run) { .show_dry_run("UPDATE", url, rows, valid); return(invisible(TRUE)) }
 
-  patched <- 0L
+  patched = 0L
+  failures = list()
   for (chunk in .chunk_indices(n, chunk_size)) {
     for (i in chunk) {
       rid <- rows[[i]][[id_col]]
       if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid))) {
-        .patch_one(.join_url(url, rid), rows[[i]], headers, style, timeout, max_tries)
-        patched <- patched + 1L
+        res = .attempt(.patch_one(.join_url(url, rid), rows[[i]], headers, style,
+                                  timeout, max_tries), on_error)
+        if (res$ok) patched = patched + 1L else failures[[as.character(i)]] = res$message
       }
     }
     if (n > 1 && verbose) message(sprintf("Updating [%d/%d]", patched, valid))
   }
-  if (n > 1 && verbose) message(sprintf("Updated %d records", valid))
-  invisible(TRUE)
+  if (n > 1 && verbose) message(sprintf("Updated %d records", patched))
+  .report_failures("update", valid, failures)
+  invisible(length(failures) == 0L)
 }
 
 #' Upsert records via API (PATCH if id exists; POST otherwise)
@@ -97,19 +110,21 @@ update <- function(url, data, headers = list(), id_col = "id",
 #' @inheritParams create
 #' @param on_missing `"create"` (default) or `"error"`; what to do when an id
 #'   returns 404.
-#' @return Invisibly returns `TRUE`.
+#' @return Invisibly returns `TRUE`, or `FALSE` when `on_error = "continue"`
+#'   and some rows failed.
 #' @export
 upsert <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
-                   staging = FALSE, verbose = getOption("cramerdb_verbose", FALSE),
+                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   verbose = getOption("cramerdb_verbose", FALSE),
                    timeout = 60L, max_tries = 3L,
-                   on_missing = c("create", "error")) {
+                   on_missing = c("create", "error"),
+                   on_error = c("stop", "continue")) {
   if (!is.data.frame(data))
     stop("'data' must be a data.frame or sf object.", call. = FALSE)
   on_missing <- match.arg(on_missing)
+  on_error = match.arg(on_error)
   headers  <- .auth_headers(headers)
-  base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
   .check_url_trusted(url)
   style    <- .pick_style(match.arg(style), data)
@@ -118,26 +133,18 @@ upsert <- function(url, data, headers = list(), id_col = "id",
 
   if (dry_run) { .show_dry_run("UPSERT", url, rows, n); return(invisible(TRUE)) }
 
-  created <- 0L; updated <- 0L; missing <- character(0)
+  created = 0L; updated = 0L; missing = character(0); failures = list()
   for (chunk in .chunk_indices(n, chunk_size)) {
     for (i in chunk) {
-      row <- rows[[i]]
-      rid <- row[[id_col]]
-      if (!is.null(rid) && !is.na(rid) && nzchar(as.character(rid))) {
-        if (.patch_one(.join_url(url, rid), row, headers, style, timeout, max_tries)) {
-          updated <- updated + 1L
-        } else {
-          if (identical(on_missing, "error"))
-            stop(sprintf("upsert(): %s '%s' returned 404; it is missing or not visible to your account.",
-                         id_col, as.character(rid)), call. = FALSE)
-          missing <- c(missing, as.character(rid))
-          .post_one(url, row, headers, style, timeout, max_tries)
-          created <- created + 1L
-        }
-      } else {
-        .post_one(url, row, headers, style, timeout, max_tries)
-        created <- created + 1L
+      res = .attempt(.upsert_one(url, rows[[i]], id_col, headers, style,
+                                 timeout, max_tries, on_missing), on_error)
+      if (!res$ok) {
+        failures[[as.character(i)]] = res$message
+        next
       }
+      if (identical(res$value, "updated")) updated = updated + 1L else created = created + 1L
+      if (identical(res$value, "recreated"))
+        missing = c(missing, as.character(rows[[i]][[id_col]]))
     }
     if (n > 1 && verbose) message(sprintf("Upserting [%d/%d]", max(chunk), n))
   }
@@ -150,14 +157,55 @@ upsert <- function(url, data, headers = list(), id_col = "id",
       length(missing), id_col, paste(shown, collapse = ", ")), call. = FALSE)
   }
   if (n > 1 && verbose)
-    message(sprintf("Upserted %d records (created: %d, updated: %d)", n, created, updated))
-  invisible(TRUE)
+    message(sprintf("Upserted %d records (created: %d, updated: %d)",
+                    created + updated, created, updated))
+  .report_failures("upsert", n, failures)
+  invisible(length(failures) == 0L)
 }
 
 # ---- internals ---------------------------------------------------------------
 
 .pick_style <- function(style, data) {
   if (style == "auto") if (inherits(data, "sf")) "feature" else "plain" else style
+}
+
+# PATCH when the id is present, POST when it is absent or the server answers
+# 404. "recreated" = an id that 404'd and was posted as a new record.
+.upsert_one = function(url, row, id_col, headers, style, timeout, max_tries, on_missing)
+{
+  rid = row[[id_col]]
+  if (is.null(rid) || is.na(rid) || !nzchar(as.character(rid))) {
+    .post_one(url, row, headers, style, timeout, max_tries)
+    return("created")
+  }
+  if (.patch_one(.join_url(url, rid), row, headers, style, timeout, max_tries))
+    return("updated")
+  if (identical(on_missing, "error"))
+    stop(sprintf("upsert(): %s '%s' returned 404; it is missing or not visible to your account.",
+                 id_col, as.character(rid)), call. = FALSE)
+  .post_one(url, row, headers, style, timeout, max_tries)
+  "recreated"
+}
+
+# Run one row's request; under "continue" its error is captured so the rest of
+# the batch still runs. `expr` is a promise, forced inside the chosen branch.
+.attempt = function(expr, on_error)
+{
+  if (identical(on_error, "stop")) return(list(ok = TRUE, value = expr))
+  tryCatch(list(ok = TRUE, value = expr),
+           error = function(e) list(ok = FALSE, message = conditionMessage(e)))
+}
+
+.report_failures = function(verb, n, failures)
+{
+  if (!length(failures)) return(invisible(NULL))
+  shown = failures[seq_len(min(5L, length(failures)))]
+  warning(sprintf("%s(): %d of %d row(s) failed and were skipped:\n  %s",
+                  verb, length(failures), n,
+                  paste(sprintf("row %s: %s", names(shown), unlist(shown)),
+                        collapse = "\n  ")),
+          call. = FALSE)
+  invisible(NULL)
 }
 
 .as_row_list <- function(df, id_col = "id") {
@@ -171,7 +219,12 @@ upsert <- function(url, data, headers = list(), id_col = "id",
     df <- sf::st_drop_geometry(df)
   }
   lapply(seq_len(nrow(df)), function(i) {
-    lapply(as.list(df[i, , drop = FALSE]), function(v) if (length(v) == 1 && is.na(v)) NULL else v)
+    row = lapply(as.list(df[i, , drop = FALSE]),
+                 function(v) if (length(v) == 1 && is.na(v)) NULL else v)
+    # a key has no null form; drop it so the server assigns one (other NA
+    # fields still go out as explicit JSON nulls)
+    if (id_col %in% names(row) && is.null(row[[id_col]])) row[[id_col]] = NULL
+    row
   })
 }
 

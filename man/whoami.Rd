@@ -5,16 +5,13 @@
 \title{Check who is authenticated}
 \usage{
 whoami(
-  base_url = "https://cramerdb.com/api/",
-  staging = FALSE,
+  base_url = "https://api.cramerdb.com/rest/",
   timeout = 60L,
   max_tries = 3L
 )
 }
 \arguments{
 \item{base_url}{Character. Base API URL.}
-
-\item{staging}{Logical. If TRUE, routes requests to the staging server.}
 
 \item{timeout}{Integer. Request timeout in seconds. Default 60.}
 

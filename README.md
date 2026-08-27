@@ -107,26 +107,26 @@ The `endpoints()` function helps you navigate the API structure:
 ```r
 # List top-level endpoints
 endpoints()
-# Available endpoints at https://cramerdb.com/api/:
-#   biology              https://cramerdb.com/api/biology/
-#   core                 https://cramerdb.com/api/core/
-#   habitatbreak         https://cramerdb.com/api/habitatbreak/
-#   lab                  https://cramerdb.com/api/lab/
-#   logger               https://cramerdb.com/api/logger/
-#   permitting           https://cramerdb.com/api/permitting/
-#   seine                https://cramerdb.com/api/seine/
-#   snorkel              https://cramerdb.com/api/snorkel/
-#   stranding            https://cramerdb.com/api/stranding/
-#   tagging              https://cramerdb.com/api/tagging/
-#   veg-rec              https://cramerdb.com/api/veg-rec/
+# Available endpoints at https://api.cramerdb.com/rest/:
+#   biology              https://api.cramerdb.com/rest/biology/
+#   core                 https://api.cramerdb.com/rest/core/
+#   habitatbreak         https://api.cramerdb.com/rest/habitatbreak/
+#   lab                  https://api.cramerdb.com/rest/lab/
+#   logger               https://api.cramerdb.com/rest/logger/
+#   permitting           https://api.cramerdb.com/rest/permitting/
+#   seine                https://api.cramerdb.com/rest/seine/
+#   snorkel              https://api.cramerdb.com/rest/snorkel/
+#   stranding            https://api.cramerdb.com/rest/stranding/
+#   tagging              https://api.cramerdb.com/rest/tagging/
+#   veg-rec              https://api.cramerdb.com/rest/veg-rec/
 
 # Drill down into specific sections
 endpoints("seine")
-# Available endpoints at https://cramerdb.com/api/seine/:
-#   event                https://cramerdb.com/api/seine/event/
-#   haul                 https://cramerdb.com/api/seine/haul/
-#   net                  https://cramerdb.com/api/seine/net/
-#   sample               https://cramerdb.com/api/seine/sample/
+# Available endpoints at https://api.cramerdb.com/rest/seine/:
+#   event                https://api.cramerdb.com/rest/seine/event/
+#   haul                 https://api.cramerdb.com/rest/seine/haul/
+#   net                  https://api.cramerdb.com/rest/seine/net/
+#   sample               https://api.cramerdb.com/rest/seine/sample/
 
 endpoints("biology")
 endpoints("lab")
@@ -138,7 +138,7 @@ Use `fields()` to see what columns an endpoint returns:
 
 ```r
 fields("seine/event/")
-# Fields at https://cramerdb.com/api/seine/event/:
+# Fields at https://api.cramerdb.com/rest/seine/event/:
 #   id                        string
 #   project                   field (required)
 #   survey                    field (required)
@@ -155,7 +155,7 @@ The `fetch()` function retrieves data from the API and converts it into R data f
 
 ### Basic Fetch
 
-Use relative paths (automatically prepends `https://cramerdb.com/api/`):
+Use relative paths (automatically prepends `https://api.cramerdb.com/rest/`):
 
 ```r
 # Fetch seine events
@@ -176,7 +176,7 @@ samples <- fetch("lab/sample/")
 You can still use full URLs if needed:
 
 ```r
-events <- fetch("https://cramerdb.com/api/seine/event/")
+events <- fetch("https://api.cramerdb.com/rest/seine/event/")
 ```
 
 ### Spatial Data (GeoJSON)
@@ -262,6 +262,31 @@ the ids involved. To stop on them instead:
 upsert("seine/event/", mixed_events, on_missing = "error")
 ```
 
+### Rows the Server Rejects
+
+By default, a row the server rejects stops the whole push. The rows after
+it are never sent. That is the safe choice when a rejection means
+something is wrong with the batch as a whole.
+
+On a long push you may prefer to get the good rows in and sort out the bad
+ones afterward. Set `on_error = "continue"`:
+
+```r
+create("seine/event/", new_events, on_error = "continue")
+```
+
+The push then runs to the end. Rejected rows are skipped, and a warning
+lists their row numbers along with what the server said about each. The
+return value is `FALSE` if any row failed and `TRUE` otherwise. A script
+can check it:
+
+```r
+ok <- create("seine/event/", new_events, on_error = "continue")
+if (!ok) stop("some rows were rejected")
+```
+
+The `update()` and `upsert()` functions take the same argument.
+
 ### Spatial Data (GeoJSON)
 
 For endpoints that accept GeoJSON, pass an `sf` object and it will automatically format as GeoJSON Features:
@@ -326,14 +351,15 @@ fetch("seine/event/")  # Shows progress bars and messages
 If you need to use a different API base URL:
 
 ```r
-fetch("seine/event/", base_url = "https://staging.cramerdb.com/api/")
-create("seine/event/", data, base_url = "https://staging.cramerdb.com/api/")
+fetch("seine/event/", base_url = "https://staging.cramerdb.com/rest/")
+create("seine/event/", data, base_url = "https://staging.cramerdb.com/rest/")
 ```
 
 Every request is checked before the token is attached, so a stray URL cannot
 carry your API key to somebody else's server. Two things must hold. First,
 the address must use `https`. Second, its host must be on the allowed list,
-which starts out holding `cramerdb.com` and `staging.cramerdb.com`.
+which starts out holding only `api.cramerdb.com`. A base URL on any other
+host needs that host added first, as shown below.
 
 The check covers the address you pass in. It also covers every page of a
 paginated result, including the follow-on links the server itself supplies.

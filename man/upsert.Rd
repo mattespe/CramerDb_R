@@ -11,13 +11,13 @@ upsert(
   id_col = "id",
   style = c("auto", "plain", "feature"),
   chunk_size = 200L,
-  base_url = "https://cramerdb.com/api/",
+  base_url = "https://api.cramerdb.com/rest/",
   dry_run = FALSE,
-  staging = FALSE,
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,
   max_tries = 3L,
-  on_missing = c("create", "error")
+  on_missing = c("create", "error"),
+  on_error = c("stop", "continue")
 )
 }
 \arguments{
@@ -38,8 +38,6 @@ upsert(
 
 \item{dry_run}{Logical. Preview what would be sent without sending.}
 
-\item{staging}{Logical. If TRUE, routes requests to the staging server.}
-
 \item{verbose}{Logical. Print per-chunk progress. Defaults to
 \code{getOption("cramerdb_verbose", FALSE)}.}
 
@@ -49,9 +47,13 @@ upsert(
 
 \item{on_missing}{\code{"create"} (default) or \code{"error"}; what to do when an id
 returns 404.}
+
+\item{on_error}{\code{"stop"} (default) or \code{"continue"}; whether a row the server
+rejects aborts the batch or is skipped and reported in a warning.}
 }
 \value{
-Invisibly returns \code{TRUE}.
+Invisibly returns \code{TRUE}, or \code{FALSE} when \code{on_error = "continue"}
+and some rows failed.
 }
 \description{
 A record whose id is not found is created instead. The API answers "no

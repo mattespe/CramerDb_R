@@ -11,12 +11,12 @@ create(
   id_col = "id",
   style = c("auto", "plain", "feature"),
   chunk_size = 200L,
-  base_url = "https://cramerdb.com/api/",
+  base_url = "https://api.cramerdb.com/rest/",
   dry_run = FALSE,
-  staging = FALSE,
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,
-  max_tries = 3L
+  max_tries = 3L,
+  on_error = c("stop", "continue")
 )
 }
 \arguments{
@@ -37,17 +37,19 @@ create(
 
 \item{dry_run}{Logical. Preview what would be sent without sending.}
 
-\item{staging}{Logical. If TRUE, routes requests to the staging server.}
-
 \item{verbose}{Logical. Print per-chunk progress. Defaults to
 \code{getOption("cramerdb_verbose", FALSE)}.}
 
 \item{timeout}{Integer. Request timeout in seconds. Default 60.}
 
 \item{max_tries}{Integer. Maximum retry attempts for transient errors (429, 503). Default 3.}
+
+\item{on_error}{\code{"stop"} (default) or \code{"continue"}; whether a row the server
+rejects aborts the batch or is skipped and reported in a warning.}
 }
 \value{
-Invisibly returns \code{TRUE}.
+Invisibly returns \code{TRUE}, or \code{FALSE} when \code{on_error = "continue"}
+and some rows failed.
 }
 \description{
 Create new records via API (POST)

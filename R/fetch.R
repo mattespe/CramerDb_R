@@ -6,7 +6,6 @@
 #' @param url Character. Full URL or relative path (e.g. `"tagging/event/"`).
 #' @param headers Named list of additional HTTP headers.
 #' @param base_url Character. Base API URL.
-#' @param staging Logical. If TRUE, routes requests to the staging server.
 #' @param query Named list of query parameters appended to the URL.
 #' @param verbose Logical. Print pagination progress. Defaults to
 #'   `getOption("cramerdb_verbose", FALSE)`.
@@ -15,12 +14,11 @@
 #' @param max_pages Integer. Maximum pages to follow. Default 1000.
 #' @return A `data.frame`.
 #' @export
-fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
-                  staging = FALSE, query = list(),
+fetch <- function(url, headers = list(), base_url = "https://api.cramerdb.com/rest/",
+                  query = list(),
                   verbose = getOption("cramerdb_verbose", FALSE),
                   timeout = 60L, max_tries = 3L, max_pages = 1000L) {
   headers  <- .auth_headers(headers)
-  base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url(url, base_url)
   .check_url_trusted(url)
 
@@ -37,15 +35,13 @@ fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
 #' Check who is authenticated
 #'
 #' @param base_url Character. Base API URL.
-#' @param staging Logical. If TRUE, routes requests to the staging server.
 #' @param timeout Integer. Request timeout in seconds. Default 60.
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns the parsed response list.
 #' @export
-whoami <- function(base_url = "https://cramerdb.com/api/", staging = FALSE,
+whoami <- function(base_url = "https://api.cramerdb.com/rest/",
                    timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(list())
-  base_url <- .resolve_base_url(base_url, staging)
   url      <- .normalize_url("", base_url)
   .check_url_trusted(url)
   res      <- .fetch_once(url, headers, labels = FALSE, timeout = timeout, max_tries = max_tries)

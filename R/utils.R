@@ -1,21 +1,14 @@
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
-.normalize_url <- function(url, base_url = "https://cramerdb.com/api/") {
+.normalize_url <- function(url, base_url = "https://api.cramerdb.com/rest/") {
   if (!endsWith(base_url, "/")) base_url <- paste0(base_url, "/")
   url <- sub("^/+", "", url)
   httr2::url_build(httr2::url_parse(url, base_url = base_url))
 }
 
-.resolve_base_url <- function(base_url, staging = FALSE) {
-  if (isTRUE(staging) || isTRUE(getOption("cramerdb.staging")))
-    "https://staging.cramerdb.com/api/"
-  else
-    base_url
-}
-
 .allowed_hosts = function()
 {
-  defaults = c("cramerdb.com", "staging.cramerdb.com")
+  defaults = c("api.cramerdb.com")
   extra = as.character(getOption("cramerdb.allowed_hosts", character(0)))
   unique(tolower(c(defaults, extra)))
 }

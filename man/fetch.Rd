@@ -7,8 +7,7 @@
 fetch(
   url,
   headers = list(),
-  base_url = "https://cramerdb.com/api/",
-  staging = FALSE,
+  base_url = "https://api.cramerdb.com/rest/",
   query = list(),
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,
@@ -22,8 +21,6 @@ fetch(
 \item{headers}{Named list of additional HTTP headers.}
 
 \item{base_url}{Character. Base API URL.}
-
-\item{staging}{Logical. If TRUE, routes requests to the staging server.}
 
 \item{query}{Named list of query parameters appended to the URL.}
 
