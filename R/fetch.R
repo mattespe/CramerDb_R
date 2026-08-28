@@ -14,7 +14,7 @@
 #' @param max_pages Integer. Maximum pages to follow. Default 1000.
 #' @return A `data.frame`.
 #' @export
-fetch <- function(url, headers = list(), base_url = "https://api.cramerdb.com/rest/",
+fetch <- function(url, headers = list(), base_url = "https://cramerdb.com/api/",
                   query = list(),
                   verbose = getOption("cramerdb_verbose", FALSE),
                   timeout = 60L, max_tries = 3L, max_pages = 1000L) {
@@ -39,7 +39,7 @@ fetch <- function(url, headers = list(), base_url = "https://api.cramerdb.com/re
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns the parsed response list.
 #' @export
-whoami <- function(base_url = "https://api.cramerdb.com/rest/",
+whoami <- function(base_url = "https://cramerdb.com/api/",
                    timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(list())
   url      <- .normalize_url("", base_url)

@@ -19,7 +19,7 @@
 #' @export
 create <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
                    verbose = getOption("cramerdb_verbose", FALSE),
                    timeout = 60L, max_tries = 3L,
                    on_error = c("stop", "continue")) {
@@ -55,7 +55,7 @@ create <- function(url, data, headers = list(), id_col = "id",
 #' @export
 update <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
                    verbose = getOption("cramerdb_verbose", FALSE),
                    timeout = 60L, max_tries = 3L,
                    on_error = c("stop", "continue")) {
@@ -115,7 +115,7 @@ update <- function(url, data, headers = list(), id_col = "id",
 #' @export
 upsert <- function(url, data, headers = list(), id_col = "id",
                    style = c("auto", "plain", "feature"), chunk_size = 200L,
-                   base_url = "https://api.cramerdb.com/rest/", dry_run = FALSE,
+                   base_url = "https://cramerdb.com/api/", dry_run = FALSE,
                    verbose = getOption("cramerdb_verbose", FALSE),
                    timeout = 60L, max_tries = 3L,
                    on_missing = c("create", "error"),

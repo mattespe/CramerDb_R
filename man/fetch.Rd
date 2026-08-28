@@ -7,7 +7,7 @@
 fetch(
   url,
   headers = list(),
-  base_url = "https://api.cramerdb.com/rest/",
+  base_url = "https://cramerdb.com/api/",
   query = list(),
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,

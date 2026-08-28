@@ -25,7 +25,7 @@ There is also an integration script at `inst/scripts/test_integration.R` that re
 
 ## Architecture
 
-`cramerDBlite` is a thin R client over the CramerDB Django REST Framework API at `https://api.cramerdb.com/rest/`. All public functions accept a `base_url` parameter as an escape hatch; reaching another host also requires adding it to `getOption("cramerdb.allowed_hosts")`.
+`cramerDBlite` is a thin R client over the CramerDB Django REST Framework API, defaulting to `https://cramerdb.com/api/`. All public functions accept a `base_url` parameter as an escape hatch; reaching another host also requires adding it to `getOption("cramerdb.allowed_hosts")`.
 
 ### File layout
 
@@ -39,7 +39,7 @@ There is also an integration script at `inst/scripts/test_integration.R` that re
 
 **Authentication**: `.auth_headers(headers)` is called at the top of every public function. It injects `Authorization: Token <token>` unless the caller already supplied an `Authorization` header.
 
-**Security guard**: `.check_url_trusted(url)` is called after URL resolution in every public function. It rejects any host not in `"api.cramerdb.com"` plus `getOption("cramerdb.allowed_hosts")`. This prevents credential leakage when a user passes an arbitrary URL.
+**Security guard**: `.check_url_trusted(url)` is called after URL resolution in every public function. It rejects any host not in `c("cramerdb.com", "api.cramerdb.com")` plus `getOption("cramerdb.allowed_hosts")`. This prevents credential leakage when a user passes an arbitrary URL.
 
 **URL normalization**: `.normalize_url(url, base_url)` prepends `base_url` to relative paths (uses `httr2::url_parse` with a `base_url` argument).
 

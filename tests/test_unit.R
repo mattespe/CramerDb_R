@@ -77,6 +77,8 @@ stopifnot("name" %in% names(r2[[1]]), is.null(r2[[1]]$name))
 
 # --- .check_url_trusted -------------------------------------------------------
 cramerDBlite:::.check_url_trusted("https://api.cramerdb.com/rest/sites/")
+# the default host is trusted too
+cramerDBlite:::.check_url_trusted("https://cramerdb.com/api/")
 # host match is case-insensitive
 cramerDBlite:::.check_url_trusted("https://API.CRAMERDB.COM/rest/")
 

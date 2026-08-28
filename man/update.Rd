@@ -11,7 +11,7 @@ update(
   id_col = "id",
   style = c("auto", "plain", "feature"),
   chunk_size = 200L,
-  base_url = "https://api.cramerdb.com/rest/",
+  base_url = "https://cramerdb.com/api/",
   dry_run = FALSE,
   verbose = getOption("cramerdb_verbose", FALSE),
   timeout = 60L,

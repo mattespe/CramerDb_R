@@ -11,7 +11,7 @@
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return Invisibly returns the parsed JSON response.
 #' @export
-endpoints <- function(path = NULL, base_url = "https://api.cramerdb.com/rest/",
+endpoints <- function(path = NULL, base_url = "https://cramerdb.com/api/",
                       headers = list(),
                       timeout = 60L, max_tries = 3L) {
   headers  <- .auth_headers(headers)
@@ -45,7 +45,7 @@ endpoints <- function(path = NULL, base_url = "https://api.cramerdb.com/rest/",
 #' @param max_tries Integer. Maximum retry attempts for transient errors (429, 503). Default 3.
 #' @return A character vector of field names, or NULL on failure.
 #' @export
-fields <- function(path, base_url = "https://api.cramerdb.com/rest/",
+fields <- function(path, base_url = "https://cramerdb.com/api/",
                    headers = list(),
                    timeout = 60L, max_tries = 3L) {
   user_headers <- headers

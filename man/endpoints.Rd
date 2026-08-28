@@ -6,7 +6,7 @@
 \usage{
 endpoints(
   path = NULL,
-  base_url = "https://api.cramerdb.com/rest/",
+  base_url = "https://cramerdb.com/api/",
   headers = list(),
   timeout = 60L,
   max_tries = 3L
