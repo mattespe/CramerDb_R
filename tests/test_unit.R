@@ -33,6 +33,12 @@ x <- list(a = 1, b = NULL, c = list())
 r <- cramerDBlite:::.nulls_to_na(x)
 stopifnot(is.na(r$b), is.na(r$c))
 
+# a nested empty list (e.g. an array containing an empty object) must not
+# reach as.data.frame() as a zero-length node -- it broke row-count inference
+x2 <- list(a = 1, related = list(list()))
+r2 <- cramerDBlite:::.nulls_to_na(x2)
+stopifnot(is.data.frame(as.data.frame(r2, stringsAsFactors = FALSE)))
+
 # --- .bind_rows ---------------------------------------------------------------
 df1 <- data.frame(a = 1L, b = "x", stringsAsFactors = FALSE)
 df2 <- data.frame(a = 2L, stringsAsFactors = FALSE)

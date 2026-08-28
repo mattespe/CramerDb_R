@@ -127,11 +127,19 @@ whoami <- function(base_url = "https://api.cramerdb.com/rest/",
     "geometry" %in% names(x) && !is.null(x[["properties"]])
 }
 
+.sanitize_nested <- function(val) {
+  if (is.null(val) || length(val) == 0) return(NA)
+  if (!is.list(val)) return(val)
+  cleaned <- lapply(val, .sanitize_nested)
+  names(cleaned) <- names(val)
+  cleaned
+}
+
 .nulls_to_na <- function(x) {
   if (!is.list(x)) return(if (is.null(x)) NA else x)
   result <- lapply(x, function(val) {
     if (is.null(val) || length(val) == 0) return(NA)
-    if (is.list(val) || length(val) > 1)  return(list(val))
+    if (is.list(val) || length(val) > 1)  return(list(.sanitize_nested(val)))
     val
   })
   names(result) <- names(x)
